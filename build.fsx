@@ -26,6 +26,8 @@ Target "Build" <| fun _ ->
                "/wildcards /out:ProjectScaffolding.packed.exe ProjectScaffolding.exe *.dll",
                "./src/ProjectScaffolding/bin" @@ solution.Configuration) |> ignore
 
+// git archive --format=zip -o akka-unity.zip HEAD:templates/unity
+
 Target "PackNuget" <| fun _ -> createNugetPackages solution
 
 Target "Pack" <| fun _ -> ()
