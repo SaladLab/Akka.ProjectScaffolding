@@ -18,7 +18,13 @@ Target "AssemblyInfo" <| fun _ -> generateAssemblyInfo solution
 
 Target "Restore" <| fun _ -> restoreNugetPackages solution
 
-Target "Build" <| fun _ -> buildSolution solution
+Target "Build" <| fun _ ->
+    buildSolution solution
+    // pack UniGet.exe with dependent modules to packed one
+    let ilrepackExe = (getNugetPackage "ILRepack" "2.0.9") @@ "tools" @@ "ILRepack.exe"
+    Shell.Exec(ilrepackExe,
+               "/wildcards /out:ProjectScaffolding.packed.exe ProjectScaffolding.exe *.dll",
+               "./src/ProjectScaffolding/bin" @@ solution.Configuration) |> ignore
 
 Target "PackNuget" <| fun _ -> createNugetPackages solution
 
