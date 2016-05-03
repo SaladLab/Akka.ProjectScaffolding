@@ -79,5 +79,12 @@ namespace ProjectScaffolding
 
             return tcs.Task;
         }
+
+        public static string CreateTemporaryDirectory()
+        {
+            var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(tempDirectory);
+            return tempDirectory;
+        }
     }
 }

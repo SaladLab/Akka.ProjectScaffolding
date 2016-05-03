@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Reflection;
 using CommandLine;
 
 namespace ProjectScaffolding
@@ -49,11 +50,29 @@ namespace ProjectScaffolding
             if (Directory.Exists(targetPath) == false)
                 Directory.CreateDirectory(targetPath);
 
+            var templateZip = (string)null;
+            if (string.IsNullOrEmpty(options.TemplatePath))
+                templateZip = Path.ChangeExtension(Assembly.GetEntryAssembly().Location, "zip");
+            else if (File.Exists(options.TemplatePath))
+                templateZip = options.TemplatePath;
+
+            var srcPath = options.TemplatePath;
+            if (string.IsNullOrEmpty(templateZip) == false)
+            {
+                srcPath = PackageUtil.CreateTemporaryDirectory();
+                ZipFile.ExtractToDirectory(templateZip, srcPath);
+            }
+
             Console.WriteLine("* BuildGuidMappingTable");
-            BuildGuidMappingTable(options);
+            BuildGuidMappingTable(options, srcPath);
 
             Console.WriteLine("* Populate");
-            Populate(options, options.TemplatePath, targetPath);
+            Populate(options, srcPath, targetPath);
+
+            if (string.IsNullOrEmpty(templateZip) == false)
+            {
+                Directory.Delete(srcPath, true);
+            }
 
             Console.WriteLine("* RestorePackage");
             RestorePackages(options, targetPath);
@@ -66,11 +85,11 @@ namespace ProjectScaffolding
 
         internal static Dictionary<Guid, Guid> GuidMappingTable;
 
-        internal static void BuildGuidMappingTable(Options options)
+        internal static void BuildGuidMappingTable(Options options, string srcPath)
         {
             GuidMappingTable = new Dictionary<Guid, Guid>();
 
-            foreach (var file in Directory.GetFiles(options.TemplatePath, "*.sln", SearchOption.AllDirectories))
+            foreach (var file in Directory.GetFiles(srcPath, "*.sln", SearchOption.AllDirectories))
             {
                 // Project("{IGNORED_GUID}") = "~", "~", "{MATCHED_GUID}"
                 var matches = Regex.Matches(File.ReadAllText(file), @",\s*""\{(" + GuidPattern + @")\}""", RegexOptions.IgnoreCase);
