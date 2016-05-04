@@ -15,73 +15,72 @@ using ProtoBuf;
 using TypeAlias;
 using System.ComponentModel;
 
-#region Domain.IGreeter
+#region Domain.Interface.IUser
 
-namespace Domain
+namespace Domain.Interface
 {
-    [PayloadTableForInterfacedActor(typeof(IGreeter))]
-    public static class IGreeter_PayloadTable
+    [PayloadTableForInterfacedActor(typeof(IUser))]
+    public static class IUser_PayloadTable
     {
         public static Type[,] GetPayloadTypes()
         {
             return new Type[,] {
-                { typeof(GetHelloCount_Invoke), typeof(GetHelloCount_Return) },
-                { typeof(Hello_Invoke), typeof(Hello_Return) },
+                { typeof(AddNote_Invoke), null },
+                { typeof(RemoveNote_Invoke), null },
+                { typeof(SetNickname_Invoke), null },
             };
         }
 
         [ProtoContract, TypeAlias]
-        public class GetHelloCount_Invoke
+        public class AddNote_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            public Type GetInterfaceType() { return typeof(IGreeter); }
+            [ProtoMember(1)] public System.Int32 id;
+            [ProtoMember(2)] public System.String note;
+            public Type GetInterfaceType() { return typeof(IUser); }
             public async Task<IValueGetable> InvokeAsync(object target)
             {
-                var __v = await ((IGreeter)target).GetHelloCount();
-                return (IValueGetable)(new GetHelloCount_Return { v = __v });
+                await ((IUser)target).AddNote(id, note);
+                return null;
             }
         }
 
         [ProtoContract, TypeAlias]
-        public class GetHelloCount_Return
-            : IInterfacedPayload, IValueGetable
-        {
-            [ProtoMember(1)] public System.Int32 v;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
-            public object Value { get { return v; } }
-        }
-
-        [ProtoContract, TypeAlias]
-        public class Hello_Invoke
+        public class RemoveNote_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.String who;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
+            [ProtoMember(1)] public System.Int32 id;
+            public Type GetInterfaceType() { return typeof(IUser); }
             public async Task<IValueGetable> InvokeAsync(object target)
             {
-                var __v = await ((IGreeter)target).Hello(who);
-                return (IValueGetable)(new Hello_Return { v = __v });
+                await ((IUser)target).RemoveNote(id);
+                return null;
             }
         }
 
         [ProtoContract, TypeAlias]
-        public class Hello_Return
-            : IInterfacedPayload, IValueGetable
+        public class SetNickname_Invoke
+            : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.String v;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
-            public object Value { get { return v; } }
+            [ProtoMember(1)] public System.String nickname;
+            public Type GetInterfaceType() { return typeof(IUser); }
+            public async Task<IValueGetable> InvokeAsync(object target)
+            {
+                await ((IUser)target).SetNickname(nickname);
+                return null;
+            }
         }
     }
 
-    public interface IGreeter_NoReply
+    public interface IUser_NoReply
     {
-        void GetHelloCount();
-        void Hello(System.String who);
+        void AddNote(System.Int32 id, System.String note);
+        void RemoveNote(System.Int32 id);
+        void SetNickname(System.String nickname);
     }
 
     [ProtoContract, TypeAlias]
-    public class GreeterRef : InterfacedActorRef, IGreeter, IGreeter_NoReply
+    public class UserRef : InterfacedActorRef, IUser, IUser_NoReply
     {
         [ProtoMember(1)] private ActorRefBase _actor
         {
@@ -89,63 +88,231 @@ namespace Domain
             set { Actor = value; }
         }
 
-        private GreeterRef() : base(null)
+        private UserRef() : base(null)
         {
         }
 
-        public GreeterRef(IActorRef actor) : base(actor)
+        public UserRef(IActorRef actor) : base(actor)
         {
         }
 
-        public GreeterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
+        public UserRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
         {
         }
 
-        public IGreeter_NoReply WithNoReply()
+        public IUser_NoReply WithNoReply()
         {
             return this;
         }
 
-        public GreeterRef WithRequestWaiter(IRequestWaiter requestWaiter)
+        public UserRef WithRequestWaiter(IRequestWaiter requestWaiter)
         {
-            return new GreeterRef(Actor, requestWaiter, Timeout);
+            return new UserRef(Actor, requestWaiter, Timeout);
         }
 
-        public GreeterRef WithTimeout(TimeSpan? timeout)
+        public UserRef WithTimeout(TimeSpan? timeout)
         {
-            return new GreeterRef(Actor, RequestWaiter, timeout);
+            return new UserRef(Actor, RequestWaiter, timeout);
         }
 
-        public Task<System.Int32> GetHelloCount()
+        public Task AddNote(System.Int32 id, System.String note)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IGreeter_PayloadTable.GetHelloCount_Invoke {  }
+                InvokePayload = new IUser_PayloadTable.AddNote_Invoke { id = id, note = note }
             };
-            return SendRequestAndReceive<System.Int32>(requestMessage);
+            return SendRequestAndWait(requestMessage);
         }
 
-        public Task<System.String> Hello(System.String who)
+        public Task RemoveNote(System.Int32 id)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IGreeter_PayloadTable.Hello_Invoke { who = who }
+                InvokePayload = new IUser_PayloadTable.RemoveNote_Invoke { id = id }
             };
-            return SendRequestAndReceive<System.String>(requestMessage);
+            return SendRequestAndWait(requestMessage);
         }
 
-        void IGreeter_NoReply.GetHelloCount()
+        public Task SetNickname(System.String nickname)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IGreeter_PayloadTable.GetHelloCount_Invoke {  }
+                InvokePayload = new IUser_PayloadTable.SetNickname_Invoke { nickname = nickname }
+            };
+            return SendRequestAndWait(requestMessage);
+        }
+
+        void IUser_NoReply.AddNote(System.Int32 id, System.String note)
+        {
+            var requestMessage = new RequestMessage {
+                InvokePayload = new IUser_PayloadTable.AddNote_Invoke { id = id, note = note }
             };
             SendRequest(requestMessage);
         }
 
-        void IGreeter_NoReply.Hello(System.String who)
+        void IUser_NoReply.RemoveNote(System.Int32 id)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IGreeter_PayloadTable.Hello_Invoke { who = who }
+                InvokePayload = new IUser_PayloadTable.RemoveNote_Invoke { id = id }
             };
             SendRequest(requestMessage);
+        }
+
+        void IUser_NoReply.SetNickname(System.String nickname)
+        {
+            var requestMessage = new RequestMessage {
+                InvokePayload = new IUser_PayloadTable.SetNickname_Invoke { nickname = nickname }
+            };
+            SendRequest(requestMessage);
+        }
+    }
+}
+
+#endregion
+#region Domain.Interface.IUserLogin
+
+namespace Domain.Interface
+{
+    [PayloadTableForInterfacedActor(typeof(IUserLogin))]
+    public static class IUserLogin_PayloadTable
+    {
+        public static Type[,] GetPayloadTypes()
+        {
+            return new Type[,] {
+                { typeof(Login_Invoke), typeof(Login_Return) },
+            };
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Login_Invoke
+            : IInterfacedPayload, IAsyncInvokable
+        {
+            [ProtoMember(1)] public System.Int32 observerId;
+            public Type GetInterfaceType() { return typeof(IUserLogin); }
+            public async Task<IValueGetable> InvokeAsync(object target)
+            {
+                var __v = await ((IUserLogin)target).Login(observerId);
+                return (IValueGetable)(new Login_Return { v = __v });
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Login_Return
+            : IInterfacedPayload, IValueGetable
+        {
+            [ProtoMember(1)] public Domain.Interface.LoginResult v;
+            public Type GetInterfaceType() { return typeof(IUserLogin); }
+            public object Value { get { return v; } }
+        }
+    }
+
+    public interface IUserLogin_NoReply
+    {
+        void Login(System.Int32 observerId);
+    }
+
+    [ProtoContract, TypeAlias]
+    public class UserLoginRef : InterfacedActorRef, IUserLogin, IUserLogin_NoReply
+    {
+        [ProtoMember(1)] private ActorRefBase _actor
+        {
+            get { return (ActorRefBase)Actor; }
+            set { Actor = value; }
+        }
+
+        private UserLoginRef() : base(null)
+        {
+        }
+
+        public UserLoginRef(IActorRef actor) : base(actor)
+        {
+        }
+
+        public UserLoginRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
+        {
+        }
+
+        public IUserLogin_NoReply WithNoReply()
+        {
+            return this;
+        }
+
+        public UserLoginRef WithRequestWaiter(IRequestWaiter requestWaiter)
+        {
+            return new UserLoginRef(Actor, requestWaiter, Timeout);
+        }
+
+        public UserLoginRef WithTimeout(TimeSpan? timeout)
+        {
+            return new UserLoginRef(Actor, RequestWaiter, timeout);
+        }
+
+        public Task<Domain.Interface.LoginResult> Login(System.Int32 observerId)
+        {
+            var requestMessage = new RequestMessage {
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observerId = observerId }
+            };
+            return SendRequestAndReceive<Domain.Interface.LoginResult>(requestMessage);
+        }
+
+        void IUserLogin_NoReply.Login(System.Int32 observerId)
+        {
+            var requestMessage = new RequestMessage {
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observerId = observerId }
+            };
+            SendRequest(requestMessage);
+        }
+    }
+}
+
+#endregion
+#region Domain.Interface.IUserEventObserver
+
+namespace Domain.Interface
+{
+    public static class IUserEventObserver_PayloadTable
+    {
+        [ProtoContract, TypeAlias]
+        public class UserContextChange_Invoke : IInvokable
+        {
+            [ProtoMember(1)] public Domain.Data.TrackableUserContextTracker userContextTracker;
+            public void Invoke(object target)
+            {
+                ((IUserEventObserver)target).UserContextChange(userContextTracker);
+            }
+        }
+    }
+
+    [ProtoContract, TypeAlias]
+    public class UserEventObserver : InterfacedObserver, IUserEventObserver
+    {
+        [ProtoMember(1)] private ActorRefBase _actor
+        {
+            get { return Channel != null ? (ActorRefBase)(((ActorNotificationChannel)Channel).Actor) : null; }
+            set { Channel = new ActorNotificationChannel(value); }
+        }
+
+        [ProtoMember(2)] private int _observerId
+        {
+            get { return ObserverId; }
+            set { ObserverId = value; }
+        }
+
+        private UserEventObserver() : base(null, 0)
+        {
+        }
+
+        public UserEventObserver(IActorRef target, int observerId)
+            : base(new ActorNotificationChannel(target), observerId)
+        {
+        }
+
+        public UserEventObserver(INotificationChannel channel, int observerId)
+            : base(channel, observerId)
+        {
+        }
+
+        public void UserContextChange(Domain.Data.TrackableUserContextTracker userContextTracker)
+        {
+            var payload = new IUserEventObserver_PayloadTable.UserContextChange_Invoke { userContextTracker = userContextTracker };
+            Notify(payload);
         }
     }
 }

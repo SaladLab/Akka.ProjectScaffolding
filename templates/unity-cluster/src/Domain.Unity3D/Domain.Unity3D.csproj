@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.props" Condition="Exists('..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.props')" />
   <Import Project="..\..\packages\Akka.Interfaced-SlimClient.Templates-Protobuf.0.2.1\build\Akka.Interfaced-SlimClient.Templates-Protobuf.props" Condition="Exists('..\..\packages\Akka.Interfaced-SlimClient.Templates-Protobuf.0.2.1\build\Akka.Interfaced-SlimClient.Templates-Protobuf.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -55,24 +56,50 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="TrackableData, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TrackableData.1.1.3\lib\net35\TrackableData.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="TrackableData.Protobuf, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TrackableData.Protobuf.1.1.3\lib\net35\TrackableData.Protobuf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="TypeAlias, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\TypeAlias.1.1.2\lib\net35\TypeAlias.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Domain\HelloGenerator.cs">
-      <Link>HelloGenerator.cs</Link>
+    <Compile Include="..\Domain\Data\IUserContext.cs">
+      <Link>Data\IUserContext.cs</Link>
     </Compile>
-    <Compile Include="..\Domain\ITestActor.cs">
-      <Link>ITestActor.cs</Link>
+    <Compile Include="..\Domain\Data\IUserData.cs">
+      <Link>Data\IUserData.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IUser.cs">
+      <Link>Interface\IUser.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IUserEventObserver.cs">
+      <Link>Interface\IUserEventObserver.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IUserLogin.cs">
+      <Link>Interface\IUserLogin.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\ResultException.cs">
+      <Link>Interface\ResultException.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Workaround\ProtobufSurrogateDirectives.cs">
+      <Link>Workaround\ProtobufSurrogateDirectives.cs</Link>
     </Compile>
     <Compile Include="Properties\Akka.Interfaced.CodeGen.Slim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\TrackableData.CodeGen.cs" />
+    <Compile Include="Workaround\UnityIl2cppWorkaround.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -84,6 +111,8 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\packages\Akka.Interfaced-SlimClient.Templates-Protobuf.0.2.1\build\Akka.Interfaced-SlimClient.Templates-Protobuf.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Akka.Interfaced-SlimClient.Templates-Protobuf.0.2.1\build\Akka.Interfaced-SlimClient.Templates-Protobuf.props'))" />
     <Error Condition="!Exists('..\..\packages\Akka.Interfaced-SlimClient.Templates-Protobuf.0.2.1\build\Akka.Interfaced-SlimClient.Templates-Protobuf.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Akka.Interfaced-SlimClient.Templates-Protobuf.0.2.1\build\Akka.Interfaced-SlimClient.Templates-Protobuf.targets'))" />
+    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.props'))" />
+    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.targets'))" />
   </Target>
   <Import Project="..\..\packages\Akka.Interfaced-SlimClient.Templates-Protobuf.0.2.1\build\Akka.Interfaced-SlimClient.Templates-Protobuf.targets" Condition="Exists('..\..\packages\Akka.Interfaced-SlimClient.Templates-Protobuf.0.2.1\build\Akka.Interfaced-SlimClient.Templates-Protobuf.targets')" />
   <PropertyGroup>
@@ -91,6 +120,7 @@
 COPY /Y "$(TargetDir)Domain.Unity3D.ProtobufSerializer.dll" "$(SolutionDir)src\GameClient\Assets\Scripts"
 COPY /Y "$(TargetPath)" "$(SolutionDir)src\GameClient\Assets\Scripts"</PostBuildEvent>
   </PropertyGroup>
+  <Import Project="..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.targets" Condition="Exists('..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -3,6 +3,10 @@
     "AkkaInterfacedSlimSocket": {
       "version": "0.2.*",
       "source": "github:SaladLab/Akka.Interfaced.SlimSocket"
+    },
+    "TrackableData": {
+      "version": "1.*",
+      "source": "github:SaladLab/TrackableData"
     }
   }
 }

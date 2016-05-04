@@ -10,7 +10,7 @@ namespace GameServer
         {
             var service = new GameService();
             var cts = new CancellationTokenSource();
-            var runTask = Task.Run(() => service.RunAsync(cts.Token));
+            var runTask = Task.Run(() => service.RunAsync(args, cts.Token));
 
             Console.WriteLine("Enter to stop system.");
             Console.ReadLine();

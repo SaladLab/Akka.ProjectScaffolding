@@ -1,29 +1,36 @@
 ﻿using System;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Akka.Actor;
 using Akka.Configuration;
-using Akka.Interfaced;
-using Akka.Interfaced.SlimSocket.Base;
-using Akka.Interfaced.SlimSocket.Server;
-using Common.Logging;
-using Domain;
-using ProtoBuf.Meta;
-using TypeAlias;
+using Domain.Interface;
 
 namespace GameServer
 {
     public class GameService
     {
-        private TcpConnectionSettings _tcpConnectionSettings;
-
-        public async Task RunAsync(CancellationToken cancellationToken)
+        public async Task RunAsync(string[] args, CancellationToken cancellationToken)
         {
-            var system = CreateActorSystem();
+            // force interface assembly to be loaded before creating ProtobufSerializer
 
-            StartListen(system, 5000);
+            var type = typeof(IUser);
+            if (type == null)
+                throw new InvalidProgramException("!");
+
+            // run cluster nodes
+
+            var clusterRunner = CreateClusterRunner();
+
+            var standAlone = args.Length > 0 && args[0] == "standalone";
+            if (standAlone)
+            {
+                clusterRunner.LaunchNode(3001, 9001, "user-table", "user");
+            }
+            else
+            {
+                clusterRunner.LaunchNode(3001, 0, "user-table");
+                clusterRunner.LaunchNode(3011, 9001, "user");
+                clusterRunner.LaunchNode(3012, 9002, "user");
+            }
 
             try
             {
@@ -35,11 +42,12 @@ namespace GameServer
             }
         }
 
-        private ActorSystem CreateActorSystem()
+        private ClusterRunner CreateClusterRunner()
         {
-            var config = ConfigurationFactory.ParseString(@"
+            var commonConfig = ConfigurationFactory.ParseString(@"
                 akka {
                   actor {
+                    provider = ""Akka.Cluster.ClusterActorRefProvider, Akka.Cluster""
                     serializers {
                       wire = ""Akka.Serialization.WireSerializer, Akka.Serialization.Wire""
                       proto = ""Akka.Interfaced.ProtobufSerializer.ProtobufSerializer, Akka.Interfaced.ProtobufSerializer""
@@ -51,44 +59,18 @@ namespace GameServer
                       ""System.Object"" = wire
                     }
                   }
+                  remote {
+                    helios.tcp {
+                      hostname = ""127.0.0.1""
+                    }
+                  }
+                  cluster {
+                    seed-nodes = [""akka.tcp://GameCluster@127.0.0.1:3001""]
+                    auto-down-unreachable-after = 30s
+                  }
                 }");
 
-            var system  = ActorSystem.Create("GameServer", config);
-            DeadRequestProcessingActor.Install(system);
-
-            return system;
-        }
-
-        private void StartListen(ActorSystem system, int port)
-        {
-            var logger = LogManager.GetLogger("ClientGateway");
-
-            _tcpConnectionSettings = new TcpConnectionSettings
-            {
-                PacketSerializer = new PacketSerializer(
-                    new PacketSerializerBase.Data(
-                        new ProtoBufMessageSerializer(TypeModel.Create()),
-                        new TypeAliasTable()))
-            };
-
-            var clientGateway = system.ActorOf(Props.Create(() => new ClientGateway(logger, CreateSession)));
-            clientGateway.Tell(new ClientGatewayMessage.Start(new IPEndPoint(IPAddress.Any, port)));
-        }
-
-        private IActorRef CreateSession(IActorContext context, Socket socket)
-        {
-            var logger = LogManager.GetLogger($"Client({socket.RemoteEndPoint})");
-            return context.ActorOf(Props.Create(() => new ClientSession(
-                                                          logger, socket, _tcpConnectionSettings, CreateInitialActor)));
-        }
-
-        private static Tuple<IActorRef, Type>[] CreateInitialActor(IActorContext context, Socket socket)
-        {
-            return new[]
-            {
-                Tuple.Create(context.ActorOf(Props.Create(() => new Greeter(context.Self, socket.RemoteEndPoint))),
-                             typeof(IGreeter)),
-            };
+            return new ClusterRunner(commonConfig);
         }
     }
 }
