@@ -37,7 +37,7 @@ namespace Domain.Interface
             [ProtoMember(1)] public System.Int32 id;
             [ProtoMember(2)] public System.String note;
             public Type GetInterfaceType() { return typeof(IUser); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
             }
@@ -49,7 +49,7 @@ namespace Domain.Interface
         {
             [ProtoMember(1)] public System.Int32 id;
             public Type GetInterfaceType() { return typeof(IUser); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
             }
@@ -61,7 +61,7 @@ namespace Domain.Interface
         {
             [ProtoMember(1)] public System.String nickname;
             public Type GetInterfaceType() { return typeof(IUser); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
             }
@@ -167,7 +167,7 @@ namespace Domain.Interface
         {
             [ProtoMember(1)] public System.Int32 observerId;
             public Type GetInterfaceType() { return typeof(IUserLogin); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
             }
@@ -238,9 +238,9 @@ namespace Domain.Interface
         public class UserContextChange_Invoke : IInvokable
         {
             [ProtoMember(1)] public Domain.Data.TrackableUserContextTracker userContextTracker;
-            public void Invoke(object target)
+            public void Invoke(object __target)
             {
-                ((IUserEventObserver)target).UserContextChange(userContextTracker);
+                ((IUserEventObserver)__target).UserContextChange(userContextTracker);
             }
         }
     }

@@ -38,9 +38,9 @@ namespace Domain.Interface
             [ProtoMember(1)] public System.Int32 id;
             [ProtoMember(2)] public System.String note;
             public Type GetInterfaceType() { return typeof(IUser); }
-            public async Task<IValueGetable> InvokeAsync(object target)
+            public async Task<IValueGetable> InvokeAsync(object __target)
             {
-                await ((IUser)target).AddNote(id, note);
+                await ((IUser)__target).AddNote(id, note);
                 return null;
             }
         }
@@ -51,9 +51,9 @@ namespace Domain.Interface
         {
             [ProtoMember(1)] public System.Int32 id;
             public Type GetInterfaceType() { return typeof(IUser); }
-            public async Task<IValueGetable> InvokeAsync(object target)
+            public async Task<IValueGetable> InvokeAsync(object __target)
             {
-                await ((IUser)target).RemoveNote(id);
+                await ((IUser)__target).RemoveNote(id);
                 return null;
             }
         }
@@ -64,9 +64,9 @@ namespace Domain.Interface
         {
             [ProtoMember(1)] public System.String nickname;
             public Type GetInterfaceType() { return typeof(IUser); }
-            public async Task<IValueGetable> InvokeAsync(object target)
+            public async Task<IValueGetable> InvokeAsync(object __target)
             {
-                await ((IUser)target).SetNickname(nickname);
+                await ((IUser)__target).SetNickname(nickname);
                 return null;
             }
         }
@@ -186,9 +186,9 @@ namespace Domain.Interface
         {
             [ProtoMember(1)] public System.Int32 observerId;
             public Type GetInterfaceType() { return typeof(IUserLogin); }
-            public async Task<IValueGetable> InvokeAsync(object target)
+            public async Task<IValueGetable> InvokeAsync(object __target)
             {
-                var __v = await ((IUserLogin)target).Login(observerId);
+                var __v = await ((IUserLogin)__target).Login(observerId);
                 return (IValueGetable)(new Login_Return { v = __v });
             }
         }
@@ -273,9 +273,9 @@ namespace Domain.Interface
         public class UserContextChange_Invoke : IInvokable
         {
             [ProtoMember(1)] public Domain.Data.TrackableUserContextTracker userContextTracker;
-            public void Invoke(object target)
+            public void Invoke(object __target)
             {
-                ((IUserEventObserver)target).UserContextChange(userContextTracker);
+                ((IUserEventObserver)__target).UserContextChange(userContextTracker);
             }
         }
     }
