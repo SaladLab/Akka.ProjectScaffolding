@@ -5,6 +5,9 @@
 
 open Fake
 open Fake.Git.CommandHelper
+open Fake.Testing.XUnit2
+open Fake.AppVeyor
+open System
 open BuildLib
 
 let solution = 
@@ -30,14 +33,32 @@ Target "Build" <| fun _ ->
 Target "PackZip" <| fun _ ->
     let workDir = binDir @@ "templates"
     ensureDirectory workDir
-    runGitCommand "." ("archive --format=zip -o " + workDir + "/akka-unity.zip HEAD:templates/unity") |> ignore
-    runGitCommand "." ("archive --format=zip -o " + workDir + "/akka-unity-cluster.zip HEAD:templates/unity-cluster") |> ignore
-    let psExe = "./src/ProjectScaffolding/bin/Release/ProjectScaffolding.packed.exe"
-    FileHelper.CopyFile (workDir @@ "akka-unity.exe") psExe
-    FileHelper.CopyFile (workDir @@ "akka-unity-cluster.exe") psExe
+    for template in [ "unity"; "unity-cluster" ] do
+        runGitCommand "." ("archive --format=zip -o " + workDir + "/akka-" + template + ".zip HEAD:templates/" + template) |> ignore
+        FileHelper.CopyFile (workDir @@ ("akka-" + template + ".exe")) "./src/ProjectScaffolding/bin/Release/ProjectScaffolding.packed.exe"
     ZipHelper.Zip workDir (binDir @@ "Akka.ProjectScaffolding.zip") !!(workDir @@ "*")
 
 Target "Pack" <| fun _ -> ()
+
+Target "TestTemplates" <| fun _ ->
+    ensureDirectory testDir
+    let packTestDir = binDir @@ "packTest"
+    ensureDirectory packTestDir
+    let templateDir = binDir @@ "templates"
+    for template in [ "unity"; "unity-cluster" ] do
+        let result = ExecProcess (fun info ->
+            info.FileName <- templateDir @@ ("/akka-" + template + ".exe")
+            info.Arguments <- template + " -o \"" + packTestDir + "\"") TimeSpan.MaxValue
+        if result <> 0 then failwithf ("Failed to run akka-")
+        let solutionDir = packTestDir @@ template
+        MSBuildRelease "" "Rebuild" [solutionDir @@ (template + ".sln")] |> ignore
+        Fake.Testing.XUnit2.xUnit2 (fun p ->
+            { p with ToolPath = xunitRunnerExe.Force()
+                     ShadowCopy = false
+                     XmlOutputPath = Some(testDir @@ template + ".xml") }) 
+            [solutionDir @@ "src" @@ "Domain.Tests" @@ "bin" @@ "Release" @@ "Domain.Tests.dll";
+             solutionDir @@ "src" @@ "GameServer.Tests" @@ "bin" @@ "Release" @@ "GameServer.Tests.dll"]
+        if not (String.IsNullOrEmpty AppVeyorEnvironment.JobId) then UploadTestResultsFile Xunit (testDir @@ template + ".xml")
 
 Target "CI" <| fun _ -> ()
 
@@ -51,7 +72,10 @@ Target "Help" <| fun _ ->
   ==> "Restore"
   ==> "Build"
 
-"Build" ==> "PackZip"
+"Build" ==> "PackZip" ==> "TestTemplates"
 "PackZip" ==> "Pack"
+
+"TestTemplates" ==> "CI"
+"Pack" ==> "CI"
 
 RunTargetOrDefault "Help"
