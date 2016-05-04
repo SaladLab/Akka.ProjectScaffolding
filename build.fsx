@@ -4,12 +4,13 @@
 #r "BuildLib.dll"
 
 open Fake
+open Fake.Git.CommandHelper
 open BuildLib
 
 let solution = 
     initSolution
-        "./ProjectScaffolding.sln" "Release" 
-        [ { emptyProject with Name = "ProjectScaffolding" 
+        "./ProjectScaffolding.sln" "Release"
+        [ { emptyProject with Name = "ProjectScaffolding"
                               Folder = "./src/ProjectScaffolding" } ]
 
 Target "Clean" <| fun _ -> cleanBin
@@ -26,30 +27,31 @@ Target "Build" <| fun _ ->
                "/wildcards /out:ProjectScaffolding.packed.exe ProjectScaffolding.exe *.dll",
                "./src/ProjectScaffolding/bin" @@ solution.Configuration) |> ignore
 
-// git archive --format=zip -o akka-unity.zip HEAD:templates/unity
-
-Target "PackNuget" <| fun _ -> createNugetPackages solution
+Target "PackZip" <| fun _ ->
+    let workDir = binDir @@ "templates"
+    ensureDirectory workDir
+    runGitCommand "." ("archive --format=zip -o " + workDir + "/akka-unity.zip HEAD:templates/unity") |> ignore
+    runGitCommand "." ("archive --format=zip -o " + workDir + "/akka-unity-cluster.zip HEAD:templates/unity-cluster") |> ignore
+    let psExe = "./src/ProjectScaffolding/bin/Release/ProjectScaffolding.packed.exe"
+    FileHelper.CopyFile (workDir @@ "akka-unity.exe") psExe
+    FileHelper.CopyFile (workDir @@ "akka-unity-cluster.exe") psExe
+    ZipHelper.Zip workDir (binDir @@ "Akka.ProjectScaffolding.zip") !!(workDir @@ "*")
 
 Target "Pack" <| fun _ -> ()
-
-Target "PublishNuget" <| fun _ -> publishNugetPackages solution
-
-Target "Publish" <| fun _ -> ()
 
 Target "CI" <| fun _ -> ()
 
 Target "Help" <| fun _ -> 
-    showUsage solution (fun _ -> None)
+    showUsage solution (fun name -> 
+        if name = "packzip" then Some("Pack all artifacts into a release zip", "")
+        else None)
 
 "Clean"
   ==> "AssemblyInfo"
   ==> "Restore"
   ==> "Build"
 
-let isPublishOnly = getBuildParam "publishonly"
-
-"Build" ==> "PackNuget" =?> ("PublishNuget", isPublishOnly = "")
-"PackNuget" ==> "Pack"
-"PublishNuget" ==> "Publish"
+"Build" ==> "PackZip"
+"PackZip" ==> "Pack"
 
 RunTargetOrDefault "Help"
