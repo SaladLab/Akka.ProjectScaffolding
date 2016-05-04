@@ -2,6 +2,7 @@
 using Akka.Actor;
 using Akka.Cluster.Utility;
 using Domain.Interface;
+using Akka.TestKit;
 
 namespace GameServer.Tests
 {
@@ -22,16 +23,17 @@ namespace GameServer.Tests
         {
             var context = new ClusterNodeContext { System = system };
 
-            context.ClusterActorDiscovery = system.ActorOf(Props.Create(
-                () => new ClusterActorDiscovery(null)));
+            context.ClusterActorDiscovery = new TestActorRef<ClusterActorDiscovery>(
+                system,
+                Props.Create(() => new ClusterActorDiscovery(null)));
 
-            context.UserTable = system.ActorOf(Props.Create(
-                () => new DistributedActorTable<long>(
-                          "User", context.ClusterActorDiscovery, null, null)));
+            context.UserTable = new TestActorRef<DistributedActorTable<long>>(
+                system,
+                Props.Create(() => new DistributedActorTable<long>("User", context.ClusterActorDiscovery, null, null)));
 
-            context.UserTableContainer = system.ActorOf(Props.Create(
-                () => new DistributedActorTableContainer<long>(
-                          "User", context.ClusterActorDiscovery, null, null)));
+            context.UserTableContainer = new TestActorRef<DistributedActorTableContainer<long>>(
+                system,
+                Props.Create(() => new DistributedActorTableContainer<long>("User", context.ClusterActorDiscovery, null, null)));
 
             Context = context;
         }

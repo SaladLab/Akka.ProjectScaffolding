@@ -78,8 +78,9 @@ namespace GameServer.Tests
 
             var ret = await _userLogin.Login(_userEventObserver.Id);
 
-            _userContext = new TrackableUserContext();
+            _userId = ret.UserId;
             _user = new UserRef(null, _clientSession.UnderlyingActor.GetRequestWaiter(ret.UserActorBindId), null);
+            _userContext = new TrackableUserContext();
         }
 
         private void OnUserEvent(IInvokable e)
