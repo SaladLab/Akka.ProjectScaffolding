@@ -30,6 +30,7 @@ sysinfo.txt
 Domain.Unity3D.*
 
 # UniGet Packages
+/Assets/UnityPackages.meta
 /Assets/UnityPackages/
 
 # SCAFFOLDING }

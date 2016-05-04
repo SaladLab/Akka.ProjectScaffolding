@@ -34,7 +34,7 @@ namespace Domain
             : IInterfacedPayload, IAsyncInvokable
         {
             public Type GetInterfaceType() { return typeof(IGreeter); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
             }
@@ -55,7 +55,7 @@ namespace Domain
         {
             [ProtoMember(1)] public System.String who;
             public Type GetInterfaceType() { return typeof(IGreeter); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
             }
