@@ -1,8 +1,9 @@
 ﻿using System;
 using Akka.Actor;
 using Akka.Cluster.Utility;
-using Domain.Interface;
+using Akka.Interfaced;
 using Akka.TestKit;
+using Domain.Interface;
 
 namespace GameServer.Tests
 {
@@ -36,6 +37,8 @@ namespace GameServer.Tests
                 Props.Create(() => new DistributedActorTableContainer<long>("User", context.ClusterActorDiscovery, null, null)));
 
             Context = context;
+
+            DeadRequestProcessingActor.Install(system);
         }
 
         public void Dispose()

@@ -68,7 +68,7 @@ namespace GameServer.Tests
             return new[] { Tuple.Create(actor, typeof(IUserLogin)) };
         }
 
-        public async Task LoginAsync()
+        public async Task<LoginResult> LoginAsync()
         {
             if (_user != null)
                 throw new InvalidOperationException("Already logined");
@@ -81,6 +81,8 @@ namespace GameServer.Tests
             _userId = ret.UserId;
             _user = new UserRef(null, _clientSession.UnderlyingActor.GetRequestWaiter(ret.UserActorBindId), null);
             _userContext = new TrackableUserContext();
+
+            return ret;
         }
 
         private void OnUserEvent(IInvokable e)

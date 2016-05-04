@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Net;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Cluster.Utility;
-using Akka.Interfaced.TestKit;
-using Akka.TestKit;
 using Akka.TestKit.Xunit2;
-using Domain.Interface;
 using Xunit;
 
 namespace GameServer.Tests
@@ -14,52 +10,40 @@ namespace GameServer.Tests
     public class UserLoginActorTest : TestKit, IClassFixture<ClusterContextFixture>
     {
         private ClusterNodeContext _clusterContext;
-        private TestActorRef<TestActorBoundSession> _clientSession;
+        private MockClient _client;
 
         public UserLoginActorTest(ClusterContextFixture clusterContextFixture)
         {
             clusterContextFixture.Initialize(Sys);
             _clusterContext = clusterContextFixture.Context;
-        }
-
-        private UserLoginRef CreateUserLogin()
-        {
-            var system = _clusterContext.System;
-
-            _clientSession = new TestActorRef<TestActorBoundSession>(
-                system, Props.Create(() => new TestActorBoundSession(CreateInitialActor)));
-
-            return new UserLoginRef(null, _clientSession.UnderlyingActor.GetRequestWaiter(1), null);
-        }
-
-        private Tuple<IActorRef, Type>[] CreateInitialActor(IActorContext context)
-        {
-            return new[]
-            {
-                Tuple.Create(
-                    context.ActorOf(Props.Create(
-                        () => new UserLoginActor(_clusterContext, context.Self, new IPEndPoint(0, 0)))),
-                    typeof(IUserLogin))
-            };
+            _client = new MockClient(_clusterContext);
         }
 
         [Fact]
         public async Task Test_UserLogin_Succeed()
         {
-            var userLogin = CreateUserLogin();
+            var ret = await _client.LoginAsync();
 
-            var observer = _clientSession.UnderlyingActor.AddTestObserver();
-            var ret = await userLogin.Login(observer.Id);
-
-            Assert.NotEqual(0, ret.UserId);
-            Assert.NotEqual(0, ret.UserActorBindId);
-            Assert.NotNull(ret.UserContext);
-            Assert.NotNull(ret.UserContext.Data);
-            Assert.NotNull(ret.UserContext.Notes);
+            Assert.NotEqual(0, _client.UserId);
+            Assert.NotNull(_client.User);
+            Assert.NotNull(_client.UserContext);
+            Assert.NotNull(_client.UserContext.Data);
+            Assert.NotNull(_client.UserContext.Notes);
 
             var tableRet = await _clusterContext.UserTable.Ask<DistributedActorTableMessage<long>.GetReply>(
-                new DistributedActorTableMessage<long>.Get(ret.UserId));
-            Assert.NotNull(tableRet.Actor);
+                new DistributedActorTableMessage<long>.Get(_client.UserId));
+            Assert.Equal(_client.ClientSession.UnderlyingActor.GetBoundActorRef(ret.UserActorBindId).Path,
+                         tableRet.Actor.Path);
+        }
+
+        [Fact]
+        public void Test_UserDisconnect_ActorStopped()
+        {
+            Watch(_client.UserLogin.Actor);
+
+            _client.ClientSession.Tell(PoisonPill.Instance);
+
+            ExpectTerminated(_client.UserLogin.Actor);
         }
     }
 }

@@ -8,6 +8,8 @@ namespace Domain.Interface
     {
         None = 0,
         LoginFailed,
+        NicknameInvalid,
+        NoteInvalid,
         NoteDuplicate,
         NoteNotFound
     }

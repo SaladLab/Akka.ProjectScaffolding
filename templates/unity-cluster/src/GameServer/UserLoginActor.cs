@@ -9,7 +9,6 @@ using Common.Logging;
 using Domain.Data;
 using Domain.Interface;
 using TrackableData;
-using System.Threading;
 
 namespace GameServer
 {
@@ -86,20 +85,16 @@ namespace GameServer
             return new LoginResult { UserId = userId, UserContext = userContext, UserActorBindId = reply2.ActorId };
         }
 
-        private static long s_lastUserId;
-
         private long CreateUserId()
         {
             // a native int64 unique value generator.
             // if you want to get a strong one, consider 128 bits key or external unique id generator.
 
-            Interlocked.Increment(ref s_lastUserId);
-
             var scratches = new byte[8];
             var bytes = Guid.NewGuid().ToByteArray();
             for (var i = 0; i < bytes.Length; i++)
                 scratches[i % scratches.Length] ^= bytes[i];
-            return BitConverter.ToInt64(scratches, 0) + s_lastUserId;
+            return BitConverter.ToInt64(scratches, 0);
         }
     }
 }

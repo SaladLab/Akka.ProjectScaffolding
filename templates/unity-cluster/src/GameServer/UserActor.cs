@@ -39,22 +39,36 @@ namespace GameServer
 
         Task IUser.SetNickname(string nickname)
         {
+            if (string.IsNullOrEmpty(nickname))
+                throw new ResultException(ResultCodeType.NicknameInvalid);
+
             _userContext.Data.Nickname = nickname;
             FlushUserContext();
+
             return Task.CompletedTask;
         }
 
         Task IUser.AddNote(int id, string note)
         {
+            if (string.IsNullOrEmpty(note))
+                throw new ResultException(ResultCodeType.NicknameInvalid);
+
+            if (_userContext.Notes.ContainsKey(id))
+                throw new ResultException(ResultCodeType.NoteDuplicate);
+
             _userContext.Notes.Add(id, note);
             FlushUserContext();
+
             return Task.CompletedTask;
         }
 
         Task IUser.RemoveNote(int id)
         {
-            _userContext.Notes.Remove(id);
+            if (_userContext.Notes.Remove(id) == false)
+                throw new ResultException(ResultCodeType.NoteNotFound);
+
             FlushUserContext();
+
             return Task.CompletedTask;
         }
 
