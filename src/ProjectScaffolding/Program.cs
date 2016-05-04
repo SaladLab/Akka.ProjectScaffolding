@@ -46,7 +46,7 @@ namespace ProjectScaffolding
 
         internal static int Process(Options options)
         {
-            var targetPath = Path.Combine(options.OutputDirectory, options.ProjectName);
+            var targetPath = Path.Combine(options.OutputDirectory ?? ".", options.ProjectName);
             if (Directory.Exists(targetPath) == false)
                 Directory.CreateDirectory(targetPath);
 
