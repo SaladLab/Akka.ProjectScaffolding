@@ -11,7 +11,7 @@ namespace GameServer.Tests
     {
         private GreeterRef CreateGreeterActor()
         {
-            var greeter = ActorOfAsTestActorRef<Greeter>(Props.Create<Greeter>((IActorRef)null, new IPEndPoint(IPAddress.Any, 0)));
+            var greeter = ActorOfAsTestActorRef<Greeter>(Props.Create<Greeter>(null, new IPEndPoint(IPAddress.Any, 0)));
             return new GreeterRef(greeter);
         }
 

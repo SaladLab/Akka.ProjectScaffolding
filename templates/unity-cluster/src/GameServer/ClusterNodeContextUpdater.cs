@@ -3,7 +3,7 @@ using Akka.Interfaced;
 
 namespace GameServer
 {
-    public class ClusterNodeContextUpdater : InterfacedActor<ClusterNodeContextUpdater>
+    public class ClusterNodeContextUpdater : InterfacedActor
     {
         private readonly ClusterNodeContext _clusterContext;
 

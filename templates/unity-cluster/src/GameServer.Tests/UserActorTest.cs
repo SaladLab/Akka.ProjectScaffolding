@@ -2,6 +2,7 @@
 using Akka.Actor;
 using Akka.Cluster.Utility;
 using Akka.TestKit.Xunit2;
+using Akka.Interfaced;
 using Domain.Data;
 using Domain.Interface;
 using Xunit;
@@ -26,7 +27,8 @@ namespace GameServer.Tests
         public async Task Test_UserDisconnect_ActorStopped()
         {
             var ret = await _client.LoginAsync();
-            var userActor = _client.ClientSession.UnderlyingActor.GetBoundActorRef(ret.UserActorBindId);
+            var actorId = ((BoundActorRef)(((UserRef)ret.User).Actor)).Id;
+            var userActor = _client.ClientSession.UnderlyingActor.GetBoundActorRef(actorId);
 
             Watch(userActor);
 

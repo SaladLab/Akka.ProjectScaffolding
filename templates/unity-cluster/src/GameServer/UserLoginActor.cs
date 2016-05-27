@@ -13,7 +13,8 @@ using TrackableData;
 namespace GameServer
 {
     [Log]
-    public class UserLoginActor : InterfacedActor<UserLoginActor>, IUserLogin
+    [ResponsiveException(typeof(ResultException))]
+    public class UserLoginActor : InterfacedActor, IUserLogin
     {
         private readonly ILog _logger;
         private readonly ClusterNodeContext _clusterContext;
@@ -34,7 +35,7 @@ namespace GameServer
             Context.Stop(Self);
         }
 
-        async Task<LoginResult> IUserLogin.Login(int observerId)
+        async Task<LoginResult> IUserLogin.Login(IUserEventObserver observer)
         {
             // create user context
 
@@ -56,7 +57,7 @@ namespace GameServer
             try
             {
                 user = Context.System.ActorOf(
-                    Props.Create<UserActor>(_clusterContext, _clientSession, userId, userContext, observerId),
+                    Props.Create<UserActor>(_clusterContext, _clientSession, userId, userContext, observer),
                     "user_" + userId);
             }
             catch (Exception e)
@@ -82,7 +83,7 @@ namespace GameServer
             var reply2 = await _clientSession.Ask<ActorBoundSessionMessage.BindReply>(
                 new ActorBoundSessionMessage.Bind(user, typeof(IUser), null));
 
-            return new LoginResult { UserId = userId, UserContext = userContext, UserActorBindId = reply2.ActorId };
+            return new LoginResult { UserId = userId, UserContext = userContext, User = BoundActorRef.Create<UserRef>(reply2.ActorId) };
         }
 
         private long CreateUserId()

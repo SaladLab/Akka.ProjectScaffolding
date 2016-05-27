@@ -76,10 +76,12 @@ namespace GameServer.Tests
             _userEventObserver = _clientSession.UnderlyingActor.AddTestObserver();
             _userEventObserver.Notified += OnUserEvent;
 
-            var ret = await _userLogin.Login(_userEventObserver.Id);
+            var observer = new UserEventObserver(_clientSession, _userEventObserver.Id);
+            var ret = await _userLogin.Login(observer);
 
+            var actorId = ((BoundActorRef)(((UserRef)ret.User).Actor)).Id;
             _userId = ret.UserId;
-            _user = new UserRef(null, _clientSession.UnderlyingActor.GetRequestWaiter(ret.UserActorBindId), null);
+            _user = new UserRef(null, _clientSession.UnderlyingActor.GetRequestWaiter(actorId), null);
             _userContext = new TrackableUserContext();
 
             return ret;

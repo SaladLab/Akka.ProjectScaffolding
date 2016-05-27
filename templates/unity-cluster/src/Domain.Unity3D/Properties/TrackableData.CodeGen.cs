@@ -116,7 +116,8 @@ namespace Domain.Data
         [ProtoMember(1)] public EnvelopedObject<string> Nickname;
         [ProtoMember(2)] public EnvelopedObject<DateTime> RegisterTime;
 
-        public static implicit operator TrackableUserDataTrackerSurrogate(TrackablePocoTracker<IUserData> tracker)
+        [ProtoConverter]
+        public static TrackableUserDataTrackerSurrogate Convert(TrackablePocoTracker<IUserData> tracker)
         {
             if (tracker == null)
                 return null;
@@ -138,7 +139,8 @@ namespace Domain.Data
             return surrogate;
         }
 
-        public static implicit operator TrackablePocoTracker<IUserData>(TrackableUserDataTrackerSurrogate surrogate)
+        [ProtoConverter]
+        public static TrackablePocoTracker<IUserData> Convert(TrackableUserDataTrackerSurrogate surrogate)
         {
             if (surrogate == null)
                 return null;

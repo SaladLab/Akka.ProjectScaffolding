@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Cluster.Utility;
 using Akka.TestKit.Xunit2;
+using Akka.Interfaced;
+using Domain.Interface;
 using Xunit;
 
 namespace GameServer.Tests
@@ -32,8 +34,9 @@ namespace GameServer.Tests
 
             var tableRet = await _clusterContext.UserTable.Ask<DistributedActorTableMessage<long>.GetReply>(
                 new DistributedActorTableMessage<long>.Get(_client.UserId));
-            Assert.Equal(_client.ClientSession.UnderlyingActor.GetBoundActorRef(ret.UserActorBindId).Path,
-                         tableRet.Actor.Path);
+            var actorId = ((BoundActorRef)((UserRef)ret.User).Actor).Id;
+            Assert.Equal(_client.ClientSession.UnderlyingActor.GetBoundActorRef(actorId),
+                         tableRet.Actor);
         }
 
         [Fact]

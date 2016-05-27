@@ -14,11 +14,38 @@ using ProtoBuf;
 using TypeAlias;
 using System.ComponentModel;
 
+namespace Domain
+{
+    #region SurrogateForIActorRef
+
+    [ProtoContract]
+    public class SurrogateForIActorRef
+    {
+        [ProtoMember(1)] public int Id;
+
+        [ProtoConverter]
+        public static SurrogateForIActorRef Convert(IActorRef value)
+        {
+            if (value == null) return null;
+            var actor = ((BoundActorRef)value);
+            return new SurrogateForIActorRef { Id = actor.Id };
+        }
+
+        [ProtoConverter]
+        public static IActorRef Convert(SurrogateForIActorRef value)
+        {
+            if (value == null) return null;
+            return new BoundActorRef(value.Id);
+        }
+    }
+}
+
+#endregion
 #region Domain.IGreeter
 
 namespace Domain
 {
-    [PayloadTableForInterfacedActor(typeof(IGreeter))]
+    [PayloadTable(typeof(IGreeter), PayloadTableKind.Request)]
     public static class IGreeter_PayloadTable
     {
         public static Type[,] GetPayloadTypes()
@@ -33,7 +60,11 @@ namespace Domain
         public class GetHelloCount_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            public Type GetInterfaceType() { return typeof(IGreeter); }
+            public Type GetInterfaceType()
+            {
+                return typeof(IGreeter);
+            }
+
             public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
@@ -45,8 +76,16 @@ namespace Domain
             : IInterfacedPayload, IValueGetable
         {
             [ProtoMember(1)] public System.Int32 v;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
-            public object Value { get { return v; } }
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IGreeter);
+            }
+
+            public object Value
+            {
+                get { return v; }
+            }
         }
 
         [ProtoContract, TypeAlias]
@@ -54,7 +93,12 @@ namespace Domain
             : IInterfacedPayload, IAsyncInvokable
         {
             [ProtoMember(1)] public System.String who;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IGreeter);
+            }
+
             public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
@@ -66,8 +110,16 @@ namespace Domain
             : IInterfacedPayload, IValueGetable
         {
             [ProtoMember(1)] public System.String v;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
-            public object Value { get { return v; } }
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IGreeter);
+            }
+
+            public object Value
+            {
+                get { return v; }
+            }
         }
     }
 
@@ -79,6 +131,14 @@ namespace Domain
 
     public class GreeterRef : InterfacedActorRef, IGreeter, IGreeter_NoReply
     {
+        public GreeterRef() : base(null)
+        {
+        }
+
+        public GreeterRef(IActorRef actor) : base(actor)
+        {
+        }
+
         public GreeterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
         {
         }
@@ -128,6 +188,26 @@ namespace Domain
                 InvokePayload = new IGreeter_PayloadTable.Hello_Invoke { who = who }
             };
             SendRequest(requestMessage);
+        }
+    }
+
+    [ProtoContract]
+    public class SurrogateForIGreeter
+    {
+        [ProtoMember(1)] public IActorRef Actor;
+
+        [ProtoConverter]
+        public static SurrogateForIGreeter Convert(IGreeter value)
+        {
+            if (value == null) return null;
+            return new SurrogateForIGreeter { Actor = ((GreeterRef)value).Actor };
+        }
+
+        [ProtoConverter]
+        public static IGreeter Convert(SurrogateForIGreeter value)
+        {
+            if (value == null) return null;
+            return new GreeterRef(value.Actor);
         }
     }
 }

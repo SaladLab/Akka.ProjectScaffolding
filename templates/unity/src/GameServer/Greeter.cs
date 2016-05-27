@@ -10,7 +10,7 @@ using Domain;
 namespace GameServer
 {
     [Log]
-    public class Greeter : InterfacedActor<Greeter>, IGreeter
+    public class Greeter : InterfacedActor, IGreeter
     {
         private readonly ILog _logger;
         private HelloGenerator _helloGenerator;

@@ -45,9 +45,9 @@ namespace GameServer
                       proto = ""Akka.Interfaced.ProtobufSerializer.ProtobufSerializer, Akka.Interfaced.ProtobufSerializer""
                     }
                     serialization-bindings {
-                      ""Akka.Interfaced.NotificationMessage, Akka.Interfaced"" = proto
-                      ""Akka.Interfaced.RequestMessage, Akka.Interfaced"" = proto
-                      ""Akka.Interfaced.ResponseMessage, Akka.Interfaced"" = proto
+                      ""Akka.Interfaced.NotificationMessage, Akka.Interfaced-Base"" = proto
+                      ""Akka.Interfaced.RequestMessage, Akka.Interfaced-Base"" = proto
+                      ""Akka.Interfaced.ResponseMessage, Akka.Interfaced-Base"" = proto
                       ""System.Object"" = wire
                     }
                   }
@@ -67,7 +67,7 @@ namespace GameServer
             {
                 PacketSerializer = new PacketSerializer(
                     new PacketSerializerBase.Data(
-                        new ProtoBufMessageSerializer(TypeModel.Create()),
+                        new ProtoBufMessageSerializer(PacketSerializer.CreateTypeModel()),
                         new TypeAliasTable()))
             };
 

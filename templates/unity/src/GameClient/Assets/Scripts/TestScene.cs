@@ -1,10 +1,8 @@
 ﻿using System.Collections;
 using System.Net;
-using Akka.Interfaced.SlimSocket.Base;
 using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
 using Domain;
-using TypeAlias;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,8 +10,8 @@ public class TestScene : MonoBehaviour
 {
     public Text LogText;
 
-    private Communicator _comm;
     private readonly ILog _logger;
+    private Communicator _comm;
 
     public TestScene()
     {
@@ -24,13 +22,8 @@ public class TestScene : MonoBehaviour
     {
         LogText.text = "";
 
-        var serializer = new PacketSerializer(
-            new PacketSerializerBase.Data(
-                new ProtoBufMessageSerializer(new DomainProtobufSerializer()),
-                new TypeAliasTable()));
-
-        _comm = new Communicator(_logger, new IPEndPoint(IPAddress.Loopback, 5000),
-            _ => new TcpConnection(serializer, LogManager.GetLogger("Connection")));
+        _comm = CommunicatorHelper.CreateCommunicator<DomainProtobufSerializer>(
+            _logger, new IPEndPoint(IPAddress.Loopback, 5000));
         _comm.Start();
 
         StartCoroutine(ProcessTest());
@@ -43,7 +36,7 @@ public class TestScene : MonoBehaviour
         WriteLine("Start ProcessTest");
         WriteLine("");
 
-        var greeter = new GreeterRef(new SlimActorRef(1), new SlimRequestWaiter(_comm, this), null);
+        var greeter = _comm.CreateRef<GreeterRef>();
 
         var t1 = greeter.Hello("Alice");
         yield return t1.WaitHandle;

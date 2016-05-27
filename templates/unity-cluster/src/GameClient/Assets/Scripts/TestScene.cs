@@ -3,13 +3,12 @@ using System.Net;
 using Akka.Interfaced.SlimSocket.Base;
 using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
+using Domain.Data;
+using Domain.Interface;
+using Newtonsoft.Json;
 using TypeAlias;
 using UnityEngine;
 using UnityEngine.UI;
-using Domain.Interface;
-using Newtonsoft.Json;
-using Domain.Data;
-using System;
 
 public class TestScene : MonoBehaviour, IUserEventObserver
 {
@@ -26,19 +25,11 @@ public class TestScene : MonoBehaviour, IUserEventObserver
 
     private void Start()
     {
-        ApplicationComponent.TryInit();
-
         LogText.text = "";
 
-        var serializer = new PacketSerializer(
-            new PacketSerializerBase.Data(
-                new ProtoBufMessageSerializer(new DomainProtobufSerializer()),
-                new TypeAliasTable()));
-
-        _comm = new Communicator(_logger, new IPEndPoint(IPAddress.Loopback, 9001),
-            _ => new TcpConnection(serializer, LogManager.GetLogger("Connection")));
+        _comm = CommunicatorHelper.CreateCommunicator<DomainProtobufSerializer>(
+            _logger, new IPEndPoint(IPAddress.Loopback, 9001));
         _comm.Start();
-        _comm.ObserverEventPoster = c => ApplicationComponent.Post(c, null);
 
         StartCoroutine(ProcessTest());
     }
@@ -52,20 +43,19 @@ public class TestScene : MonoBehaviour, IUserEventObserver
 
         // login with an user-login actor
 
-        var observerId = _comm.IssueObserverId();
-        _comm.AddObserver(observerId, new ObserverEventDispatcher(this));
-        var userLogin = new UserLoginRef(new SlimActorRef(1), new SlimRequestWaiter(_comm, this), null);
+        var userLogin = _comm.CreateRef<UserLoginRef>();
+        var observer = _comm.CreateObserver<IUserEventObserver>(this);
 
-        var t1 = userLogin.Login(observerId);
+        var t1 = userLogin.Login(observer);
         yield return t1.WaitHandle;
-        WriteLine("Login() = " + string.Format("{{ UserId:{0}, UserActorBindId:{1} }}", t1.Result.UserId, t1.Result.UserActorBindId));
+        WriteLine("Login() = " + string.Format("{{ UserId:{0}, UserActorBindId:{1} }}", t1.Result.UserId, t1.Result.User));
         WriteLine("");
 
         _userContext = new TrackableUserContext();
 
         // get an user actor from an user-login actor
 
-        var user = new UserRef(new SlimActorRef(t1.Result.UserActorBindId), new SlimRequestWaiter(_comm, this), null);
+        var user = t1.Result.User;
         WriteLine("User.SetNickname(\"TestNickname\")");
         yield return user.SetNickname("TestNickname").WaitHandle;
         WriteLine("");

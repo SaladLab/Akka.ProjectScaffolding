@@ -165,7 +165,7 @@ namespace GameServer
             _context = context;
 
             var typeModel = TypeModel.Create();
-            AutoSurrogate.Register(typeModel);
+            Akka.Interfaced.SlimSocket.Base.AutoSurrogate.Register(typeModel);
             _tcpConnectionSettings = new TcpConnectionSettings
             {
                 PacketSerializer = new PacketSerializer(

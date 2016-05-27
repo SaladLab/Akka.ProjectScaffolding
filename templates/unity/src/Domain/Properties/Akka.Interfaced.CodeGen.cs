@@ -19,7 +19,7 @@ using System.ComponentModel;
 
 namespace Domain
 {
-    [PayloadTableForInterfacedActor(typeof(IGreeter))]
+    [PayloadTable(typeof(IGreeter), PayloadTableKind.Request)]
     public static class IGreeter_PayloadTable
     {
         public static Type[,] GetPayloadTypes()
@@ -34,7 +34,11 @@ namespace Domain
         public class GetHelloCount_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            public Type GetInterfaceType() { return typeof(IGreeter); }
+            public Type GetInterfaceType()
+            {
+                return typeof(IGreeter);
+            }
+
             public async Task<IValueGetable> InvokeAsync(object __target)
             {
                 var __v = await ((IGreeter)__target).GetHelloCount();
@@ -47,8 +51,16 @@ namespace Domain
             : IInterfacedPayload, IValueGetable
         {
             [ProtoMember(1)] public System.Int32 v;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
-            public object Value { get { return v; } }
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IGreeter);
+            }
+
+            public object Value
+            {
+                get { return v; }
+            }
         }
 
         [ProtoContract, TypeAlias]
@@ -56,7 +68,12 @@ namespace Domain
             : IInterfacedPayload, IAsyncInvokable
         {
             [ProtoMember(1)] public System.String who;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IGreeter);
+            }
+
             public async Task<IValueGetable> InvokeAsync(object __target)
             {
                 var __v = await ((IGreeter)__target).Hello(who);
@@ -69,8 +86,16 @@ namespace Domain
             : IInterfacedPayload, IValueGetable
         {
             [ProtoMember(1)] public System.String v;
-            public Type GetInterfaceType() { return typeof(IGreeter); }
-            public object Value { get { return v; } }
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IGreeter);
+            }
+
+            public object Value
+            {
+                get { return v; }
+            }
         }
     }
 
@@ -80,16 +105,9 @@ namespace Domain
         void Hello(System.String who);
     }
 
-    [ProtoContract, TypeAlias]
     public class GreeterRef : InterfacedActorRef, IGreeter, IGreeter_NoReply
     {
-        [ProtoMember(1)] private ActorRefBase _actor
-        {
-            get { return (ActorRefBase)Actor; }
-            set { Actor = value; }
-        }
-
-        private GreeterRef() : base(null)
+        public GreeterRef() : base(null)
         {
         }
 
@@ -146,6 +164,26 @@ namespace Domain
                 InvokePayload = new IGreeter_PayloadTable.Hello_Invoke { who = who }
             };
             SendRequest(requestMessage);
+        }
+    }
+
+    [ProtoContract]
+    public class SurrogateForIGreeter
+    {
+        [ProtoMember(1)] public IActorRef Actor;
+
+        [ProtoConverter]
+        public static SurrogateForIGreeter Convert(IGreeter value)
+        {
+            if (value == null) return null;
+            return new SurrogateForIGreeter { Actor = ((GreeterRef)value).Actor };
+        }
+
+        [ProtoConverter]
+        public static IGreeter Convert(SurrogateForIGreeter value)
+        {
+            if (value == null) return null;
+            return new GreeterRef(value.Actor);
         }
     }
 }

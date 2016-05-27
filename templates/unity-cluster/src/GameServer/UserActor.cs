@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Interfaced;
@@ -11,7 +10,8 @@ using Domain.Interface;
 namespace GameServer
 {
     [Log]
-    public class UserActor : InterfacedActor<UserActor>, IUser
+    [ResponsiveException(typeof(ResultException))]
+    public class UserActor : InterfacedActor, IUser
     {
         private ILog _logger;
         private ClusterNodeContext _clusterContext;
@@ -21,14 +21,14 @@ namespace GameServer
         private UserEventObserver _userEventObserver;
 
         public UserActor(ClusterNodeContext clusterContext, IActorRef clientSession,
-                         long id, TrackableUserContext userContext, int observerId)
+                         long id, TrackableUserContext userContext, IUserEventObserver observer)
         {
             _logger = LogManager.GetLogger($"UserActor({id})");
             _clusterContext = clusterContext;
             _clientSession = clientSession;
             _id = id;
             _userContext = userContext;
-            _userEventObserver = new UserEventObserver(clientSession, observerId);
+            _userEventObserver = (UserEventObserver)observer;
         }
 
         [MessageHandler]
