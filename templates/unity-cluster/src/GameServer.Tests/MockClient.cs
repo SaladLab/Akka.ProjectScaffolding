@@ -6,21 +6,26 @@ using Akka.Interfaced.TestKit;
 using Akka.TestKit;
 using Domain.Data;
 using Domain.Interface;
-using Akka.Interfaced;
 
 namespace GameServer.Tests
 {
     public class MockClient : IUserEventObserver
     {
         private ClusterNodeContext _clusterContext;
-        private TestActorRef<TestActorBoundSession> _clientSession;
+        private IActorRef _clientSessionActor;
+        private TestActorBoundSession _clientSession;
         private UserLoginRef _userLogin;
         private long _userId;
         private UserRef _user;
-        private TestObserver _userEventObserver;
+        private UserEventObserver _userEventObserver;
         private TrackableUserContext _userContext;
 
-        public TestActorRef<TestActorBoundSession> ClientSession
+        public IActorRef ClientSessionActor
+        {
+            get { return _clientSessionActor; }
+
+        }
+        public TestActorBoundSession ClientSession
         {
             get { return _clientSession; }
         }
@@ -40,11 +45,6 @@ namespace GameServer.Tests
             get { return _user; }
         }
 
-        public TestObserver UserEventObserver
-        {
-            get { return _userEventObserver; }
-        }
-
         public TrackableUserContext UserContext
         {
             get { return _userContext; }
@@ -53,17 +53,20 @@ namespace GameServer.Tests
         public MockClient(ClusterNodeContext clusterContex)
         {
             _clusterContext = clusterContex;
-            _clientSession = new TestActorRef<TestActorBoundSession>(
+
+            var actorRef = new TestActorRef<TestActorBoundSession>(
                 _clusterContext.System,
                 Props.Create(() => new TestActorBoundSession(CreateInitialActor)));
+            _clientSessionActor = actorRef;
+            _clientSession = actorRef.UnderlyingActor;
+
+            _userLogin = _clientSession.CreateRef<UserLoginRef>();
         }
 
         private Tuple<IActorRef, Type>[] CreateInitialActor(IActorContext context)
         {
             var actor = context.ActorOf(Props.Create(
                 () => new UserLoginActor(_clusterContext, context.Self, new IPEndPoint(0, 0))));
-
-            _userLogin = new UserLoginRef(actor);
 
             return new[] { Tuple.Create(actor, typeof(IUserLogin)) };
         }
@@ -73,27 +76,20 @@ namespace GameServer.Tests
             if (_user != null)
                 throw new InvalidOperationException("Already logined");
 
-            _userEventObserver = _clientSession.UnderlyingActor.AddTestObserver();
-            _userEventObserver.Notified += OnUserEvent;
+            _userEventObserver = (UserEventObserver)_clientSession.CreateObserver<IUserEventObserver>(this);
 
-            var observer = new UserEventObserver(_clientSession, _userEventObserver.Id);
-            var ret = await _userLogin.Login(observer);
-
-            var actorId = ((BoundActorRef)(((UserRef)ret.User).Actor)).Id;
+            var ret = await _userLogin.Login(_userEventObserver);
             _userId = ret.UserId;
-            _user = new UserRef(null, _clientSession.UnderlyingActor.GetRequestWaiter(actorId), null);
+            _user = (UserRef)ret.User;
             _userContext = new TrackableUserContext();
-
             return ret;
-        }
-
-        private void OnUserEvent(IInvokable e)
-        {
-            e.Invoke(this);
         }
 
         void IUserEventObserver.UserContextChange(TrackableUserContextTracker userContextTracker)
         {
+            // this method is called by a worker thread of TestActorBoundSession actor
+            // which is not same with with a test thread but invocation is serialized.
+            // so if you access _userContext carefully, it could be safe :)
             userContextTracker.ApplyTo(_userContext);
         }
     }

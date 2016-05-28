@@ -35,18 +35,19 @@ namespace GameServer.Tests
             var tableRet = await _clusterContext.UserTable.Ask<DistributedActorTableMessage<long>.GetReply>(
                 new DistributedActorTableMessage<long>.Get(_client.UserId));
             var actorId = ((BoundActorRef)((UserRef)ret.User).Actor).Id;
-            Assert.Equal(_client.ClientSession.UnderlyingActor.GetBoundActorRef(actorId),
+            Assert.Equal(_client.ClientSession.GetBoundActorRef(actorId),
                          tableRet.Actor);
         }
 
         [Fact]
         public void Test_UserDisconnect_ActorStopped()
         {
-            Watch(_client.UserLogin.Actor);
+            var actor = _client.ClientSession.GetBoundActorRef(_client.UserLogin);
+            Watch(actor);
 
-            _client.ClientSession.Tell(PoisonPill.Instance);
+            _client.ClientSessionActor.Tell(PoisonPill.Instance);
 
-            ExpectTerminated(_client.UserLogin.Actor);
+            ExpectTerminated(actor);
         }
     }
 }
