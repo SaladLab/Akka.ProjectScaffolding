@@ -46,7 +46,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.0.3.1\lib\net45\Akka.Interfaced.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Interfaced.0.3.2\lib\net45\Akka.Interfaced.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced-Base, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -54,11 +54,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.LogFilter, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.LogFilter.0.3.1\lib\net45\Akka.Interfaced.LogFilter.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Interfaced.LogFilter.0.3.2\lib\net45\Akka.Interfaced.LogFilter.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.ProtobufSerializer, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.ProtobufSerializer.0.3.1-beta\lib\net45\Akka.Interfaced.ProtobufSerializer.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Interfaced.ProtobufSerializer.0.3.2-beta\lib\net45\Akka.Interfaced.ProtobufSerializer.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.SlimSocket.Base, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -66,7 +66,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.SlimSocket.Server, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.SlimSocket.Server.0.3.1-beta\lib\net45\Akka.Interfaced.SlimSocket.Server.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Interfaced.SlimSocket.Server.0.3.2-beta\lib\net45\Akka.Interfaced.SlimSocket.Server.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Remote, Version=1.0.8.24, Culture=neutral, processorArchitecture=MSIL">
