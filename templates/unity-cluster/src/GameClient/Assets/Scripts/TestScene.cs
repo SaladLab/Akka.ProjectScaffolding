@@ -1,12 +1,10 @@
 ﻿using System.Collections;
 using System.Net;
-using Akka.Interfaced.SlimSocket.Base;
 using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
 using Domain.Data;
 using Domain.Interface;
 using Newtonsoft.Json;
-using TypeAlias;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,7 +46,8 @@ public class TestScene : MonoBehaviour, IUserEventObserver
 
         var t1 = userLogin.Login(observer);
         yield return t1.WaitHandle;
-        WriteLine("Login() = " + string.Format("{{ UserId:{0}, UserActorBindId:{1} }}", t1.Result.UserId, t1.Result.User));
+        WriteLine("Login() = " + string.Format("{{ UserId:{0}, UserActorBindId:{1} }}",
+                  t1.Result.UserId, t1.Result.User));
         WriteLine("");
 
         _userContext = new TrackableUserContext();
