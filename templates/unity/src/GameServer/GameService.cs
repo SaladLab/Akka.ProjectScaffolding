@@ -63,15 +63,8 @@ namespace GameServer
         {
             var logger = LogManager.GetLogger("ClientGateway");
 
-            var typeModel = TypeModel.Create();
-            AutoSurrogate.Register(typeModel);
-            _tcpConnectionSettings = new TcpConnectionSettings
-            {
-                PacketSerializer = new PacketSerializer(
-                    new PacketSerializerBase.Data(
-                        new ProtoBufMessageSerializer(typeModel),
-                        new TypeAliasTable()))
-            };
+            _tcpConnectionSettings = new TcpConnectionSettings();
+            _tcpConnectionSettings.PacketSerializer = PacketSerializer.CreatePacketSerializer();
 
             var clientGateway = system.ActorOf(Props.Create(() => new ClientGateway(logger, CreateSession)));
             clientGateway.Tell(new ClientGatewayMessage.Start(new IPEndPoint(IPAddress.Any, port)));
@@ -80,17 +73,15 @@ namespace GameServer
         private IActorRef CreateSession(IActorContext context, Socket socket)
         {
             var logger = LogManager.GetLogger($"Client({socket.RemoteEndPoint})");
-            return context.ActorOf(Props.Create(() => new ClientSession(
-                                                          logger, socket, _tcpConnectionSettings, CreateInitialActor)));
+            return context.ActorOf(Props.Create(() =>
+                new ClientSession(logger, socket, _tcpConnectionSettings, CreateInitialActor)));
         }
 
-        private static Tuple<IActorRef, Type>[] CreateInitialActor(IActorContext context, Socket socket)
-        {
-            return new[]
+        private static Tuple<IActorRef, ActorBoundSessionMessage.InterfaceType[]>[] CreateInitialActor(IActorContext context, Socket socket) =>
+            new[]
             {
                 Tuple.Create(context.ActorOf(Props.Create(() => new Greeter(context.Self, socket.RemoteEndPoint))),
-                             typeof(IGreeter)),
+                             new[] { new ActorBoundSessionMessage.InterfaceType(typeof(IGreeter)) })
             };
-        }
     }
 }

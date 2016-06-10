@@ -166,13 +166,8 @@ namespace GameServer
 
             var typeModel = TypeModel.Create();
             Akka.Interfaced.SlimSocket.Base.AutoSurrogate.Register(typeModel);
-            _tcpConnectionSettings = new TcpConnectionSettings
-            {
-                PacketSerializer = new PacketSerializer(
-                    new PacketSerializerBase.Data(
-                        new ProtoBufMessageSerializer(typeModel),
-                        new TypeAliasTable()))
-            };
+            _tcpConnectionSettings = new TcpConnectionSettings();
+            _tcpConnectionSettings.PacketSerializer = PacketSerializer.CreatePacketSerializer();
         }
 
         public IActorRef Start(int port)
@@ -190,14 +185,13 @@ namespace GameServer
                 () => new ClientSession(logger, socket, _tcpConnectionSettings, CreateInitialActor)));
         }
 
-        private Tuple<IActorRef, Type>[] CreateInitialActor(IActorContext context, Socket socket)
+        private Tuple<IActorRef, ActorBoundSessionMessage.InterfaceType[]>[] CreateInitialActor(IActorContext context, Socket socket)
         {
             return new[]
             {
                 Tuple.Create(
-                    context.ActorOf(Props.Create(
-                        () => new UserLoginActor(_context, context.Self, socket.RemoteEndPoint))),
-                    typeof(IUserLogin))
+                    context.ActorOf(Props.Create(() => new UserLoginActor(_context, context.Self, socket.RemoteEndPoint))),
+                    new[] { new ActorBoundSessionMessage.InterfaceType(typeof(IUserLogin)) })
             };
         }
     }
