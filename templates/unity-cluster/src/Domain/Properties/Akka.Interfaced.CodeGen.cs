@@ -104,7 +104,7 @@ namespace Domain.Interface
         {
         }
 
-        public UserRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
+        public UserRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
         {
         }
 
@@ -191,6 +191,14 @@ namespace Domain.Interface
             return new UserRef(value.Actor);
         }
     }
+
+    [AlternativeInterface(typeof(IUser))]
+    public interface IUserSync : IInterfacedActorSync
+    {
+        void AddNote(System.Int32 id, System.String note);
+        void RemoveNote(System.Int32 id);
+        void SetNickname(System.String nickname);
+    }
 }
 
 #endregion
@@ -275,7 +283,7 @@ namespace Domain.Interface
         {
         }
 
-        public UserLoginRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
+        public UserLoginRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
         {
         }
 
@@ -297,7 +305,7 @@ namespace Domain.Interface
         public Task<Domain.Interface.LoginResult> Login(Domain.Interface.IUserEventObserver observer)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = observer }
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = (UserEventObserver)observer }
             };
             return SendRequestAndReceive<Domain.Interface.LoginResult>(requestMessage);
         }
@@ -305,7 +313,7 @@ namespace Domain.Interface
         void IUserLogin_NoReply.Login(Domain.Interface.IUserEventObserver observer)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = observer }
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = (UserEventObserver)observer }
             };
             SendRequest(requestMessage);
         }
@@ -329,6 +337,12 @@ namespace Domain.Interface
             if (value == null) return null;
             return new UserLoginRef(value.Actor);
         }
+    }
+
+    [AlternativeInterface(typeof(IUserLogin))]
+    public interface IUserLoginSync : IInterfacedActorSync
+    {
+        Domain.Interface.LoginResult Login(Domain.Interface.IUserEventObserver observer);
     }
 }
 
@@ -376,11 +390,6 @@ namespace Domain.Interface
         {
         }
 
-        public UserEventObserver(IActorRef target, int observerId = 0)
-            : base(new ActorNotificationChannel(target), observerId)
-        {
-        }
-
         public void UserContextChange(Domain.Data.TrackableUserContextTracker userContextTracker)
         {
             var payload = new IUserEventObserver_PayloadTable.UserContextChange_Invoke { userContextTracker = userContextTracker };
@@ -408,6 +417,12 @@ namespace Domain.Interface
             if (value == null) return null;
             return new UserEventObserver(value.Channel, value.ObserverId);
         }
+    }
+
+    [AlternativeInterface(typeof(IUserEventObserver))]
+    public interface IUserEventObserverAsync : IInterfacedObserverSync
+    {
+        Task UserContextChange(Domain.Data.TrackableUserContextTracker userContextTracker);
     }
 }
 

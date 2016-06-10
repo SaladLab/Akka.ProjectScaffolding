@@ -14,10 +14,10 @@ using ProtoBuf;
 using TypeAlias;
 using System.ComponentModel;
 
+#region SurrogateForIActorRef
+
 namespace Domain
 {
-    #region SurrogateForIActorRef
-
     [ProtoContract]
     public class SurrogateForIActorRef
     {
@@ -139,7 +139,7 @@ namespace Domain
         {
         }
 
-        public GreeterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
+        public GreeterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
         {
         }
 

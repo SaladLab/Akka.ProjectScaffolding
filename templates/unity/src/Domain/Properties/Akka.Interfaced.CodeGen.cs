@@ -115,7 +115,7 @@ namespace Domain
         {
         }
 
-        public GreeterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
+        public GreeterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
         {
         }
 
@@ -185,6 +185,13 @@ namespace Domain
             if (value == null) return null;
             return new GreeterRef(value.Actor);
         }
+    }
+
+    [AlternativeInterface(typeof(IGreeter))]
+    public interface IGreeterSync : IInterfacedActorSync
+    {
+        System.Int32 GetHelloCount();
+        System.String Hello(System.String who);
     }
 }
 

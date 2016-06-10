@@ -14,10 +14,10 @@ using ProtoBuf;
 using TypeAlias;
 using System.ComponentModel;
 
+#region SurrogateForIActorRef
+
 namespace Domain.Interface
 {
-    #region SurrogateForIActorRef
-
     [ProtoContract]
     public class SurrogateForIActorRef
     {
@@ -127,7 +127,7 @@ namespace Domain.Interface
         {
         }
 
-        public UserRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
+        public UserRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
         {
         }
 
@@ -297,7 +297,7 @@ namespace Domain.Interface
         {
         }
 
-        public UserLoginRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
+        public UserLoginRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
         {
         }
 
@@ -319,7 +319,7 @@ namespace Domain.Interface
         public Task<Domain.Interface.LoginResult> Login(Domain.Interface.IUserEventObserver observer)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = observer }
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = (UserEventObserver)observer }
             };
             return SendRequestAndReceive<Domain.Interface.LoginResult>(requestMessage);
         }
@@ -327,7 +327,7 @@ namespace Domain.Interface
         void IUserLogin_NoReply.Login(Domain.Interface.IUserEventObserver observer)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = observer }
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = (UserEventObserver)observer }
             };
             SendRequest(requestMessage);
         }
@@ -355,10 +355,10 @@ namespace Domain.Interface
 }
 
 #endregion
+#region SurrogateForINotificationChannel
+
 namespace Domain.Interface
 {
-    #region SurrogateForINotificationChannel
-
     [ProtoContract]
     public class SurrogateForINotificationChannel
     {
