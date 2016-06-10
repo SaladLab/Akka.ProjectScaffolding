@@ -6,6 +6,8 @@ using Akka.Interfaced.TestKit;
 using Akka.TestKit;
 using Domain.Data;
 using Domain.Interface;
+using Akka.Interfaced;
+using System.Net.Sockets;
 
 namespace GameServer.Tests
 {
@@ -63,13 +65,12 @@ namespace GameServer.Tests
             _userLogin = _clientSession.CreateRef<UserLoginRef>();
         }
 
-        private Tuple<IActorRef, Type>[] CreateInitialActor(IActorContext context)
-        {
-            var actor = context.ActorOf(Props.Create(
-                () => new UserLoginActor(_clusterContext, context.Self, new IPEndPoint(0, 0))));
-
-            return new[] { Tuple.Create(actor, typeof(IUserLogin)) };
-        }
+        private Tuple<IActorRef, ActorBoundSessionMessage.InterfaceType[]>[] CreateInitialActor(IActorContext context) =>
+            new[]
+            {
+                Tuple.Create(context.ActorOf(Props.Create(() => new UserLoginActor(_clusterContext, context.Self, new IPEndPoint(0, 0)))),
+                             new[] { new ActorBoundSessionMessage.InterfaceType(typeof(IUserLogin)) })
+            };
 
         public async Task<LoginResult> LoginAsync()
         {
