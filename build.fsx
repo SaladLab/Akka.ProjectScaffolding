@@ -62,6 +62,11 @@ Target "TestTemplates" <| fun _ ->
 
 Target "CI" <| fun _ -> ()
 
+Target "DevLink" <| fun _ ->
+    let depDirs = [ "../Akka.Interfaced"; "../Akka.Interfaced.SlimSocket"; "../Akka.Cluster.Utility" ]
+    devlink "./templates/unity/packages" depDirs
+    devlink "./templates/unity-cluster/packages" depDirs
+    
 Target "Help" <| fun _ -> 
     showUsage solution (fun name -> 
         if name = "packzip" then Some("Pack all artifacts into a release zip", "")
