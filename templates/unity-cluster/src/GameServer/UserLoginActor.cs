@@ -9,6 +9,7 @@ using Common.Logging;
 using Domain.Data;
 using Domain.Interface;
 using TrackableData;
+using Akka.Interfaced.SlimServer;
 
 namespace GameServer
 {
@@ -18,21 +19,15 @@ namespace GameServer
     {
         private readonly ILog _logger;
         private readonly ClusterNodeContext _clusterContext;
-        private readonly IActorRef _clientSession;
+        private readonly ActorBoundChannelRef _channel;
 
         public UserLoginActor(ClusterNodeContext clusterContext,
-                              IActorRef clientSession,
+                              ActorBoundChannelRef channel,
                               EndPoint clientRemoteEndPoint)
         {
             _logger = LogManager.GetLogger($"UserLoginActor({clientRemoteEndPoint})");
             _clusterContext = clusterContext;
-            _clientSession = clientSession;
-        }
-
-        [MessageHandler]
-        private void OnMessage(ActorBoundSessionMessage.SessionTerminated message)
-        {
-            Context.Stop(Self);
+            _channel = channel;
         }
 
         async Task<LoginResult> IUserLogin.Login(IUserEventObserver observer)
@@ -57,7 +52,7 @@ namespace GameServer
             try
             {
                 user = Context.System.ActorOf(
-                    Props.Create<UserActor>(_clusterContext, _clientSession, userId, userContext, observer),
+                    Props.Create(() => new UserActor(_clusterContext, _channel, userId, userContext, observer)),
                     "user_" + userId);
             }
             catch (Exception e)
@@ -80,10 +75,8 @@ namespace GameServer
 
             // bind user actor with client session, which makes client to communicate with this actor.
 
-            var reply2 = await _clientSession.Ask<ActorBoundSessionMessage.BindReply>(
-                new ActorBoundSessionMessage.Bind(user, typeof(IUser), null));
-
-            return new LoginResult { UserId = userId, UserContext = userContext, User = BoundActorRef.Create<UserRef>(reply2.ActorId) };
+            var boundActor = await _channel.BindActor(user.Cast<UserRef>(), ActorBindingFlags.CloseThenStop | ActorBindingFlags.StopThenCloseChannel);
+            return new LoginResult { UserId = userId, UserContext = userContext, User = boundActor.Cast<UserRef>() };
         }
 
         private long CreateUserId()

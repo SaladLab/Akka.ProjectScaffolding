@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
+using Akka.Interfaced.SlimServer;
 using Common.Logging;
 using Domain.Data;
 using Domain.Interface;
@@ -15,26 +16,20 @@ namespace GameServer
     {
         private ILog _logger;
         private ClusterNodeContext _clusterContext;
-        private IActorRef _clientSession;
+        private ActorBoundChannelRef _channel;
         private long _id;
         private TrackableUserContext _userContext;
         private UserEventObserver _userEventObserver;
 
-        public UserActor(ClusterNodeContext clusterContext, IActorRef clientSession,
+        public UserActor(ClusterNodeContext clusterContext, ActorBoundChannelRef channel,
                          long id, TrackableUserContext userContext, IUserEventObserver observer)
         {
             _logger = LogManager.GetLogger($"UserActor({id})");
             _clusterContext = clusterContext;
-            _clientSession = clientSession;
+            _channel = channel;
             _id = id;
             _userContext = userContext;
             _userEventObserver = (UserEventObserver)observer;
-        }
-
-        [MessageHandler]
-        protected void OnMessage(ActorBoundSessionMessage.SessionTerminated message)
-        {
-            Context.Stop(Self);
         }
 
         Task IUser.SetNickname(string nickname)

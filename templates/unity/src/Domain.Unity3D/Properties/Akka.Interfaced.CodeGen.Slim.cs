@@ -14,28 +14,27 @@ using ProtoBuf;
 using TypeAlias;
 using System.ComponentModel;
 
-#region SurrogateForIActorRef
+#region SurrogateForIRequestTarget
 
 namespace Domain
 {
     [ProtoContract]
-    public class SurrogateForIActorRef
+    public class SurrogateForIRequestTarget
     {
         [ProtoMember(1)] public int Id;
 
         [ProtoConverter]
-        public static SurrogateForIActorRef Convert(IActorRef value)
+        public static SurrogateForIRequestTarget Convert(IRequestTarget value)
         {
             if (value == null) return null;
-            var actor = ((BoundActorRef)value);
-            return new SurrogateForIActorRef { Id = actor.Id };
+            return new SurrogateForIRequestTarget { Id = ((BoundActorTarget)value).Id };
         }
 
         [ProtoConverter]
-        public static IActorRef Convert(SurrogateForIActorRef value)
+        public static IRequestTarget Convert(SurrogateForIRequestTarget value)
         {
             if (value == null) return null;
-            return new BoundActorRef(value.Id);
+            return new BoundActorTarget(value.Id);
         }
     }
 }
@@ -131,15 +130,17 @@ namespace Domain
 
     public class GreeterRef : InterfacedActorRef, IGreeter, IGreeter_NoReply
     {
+        public override Type InterfaceType => typeof(IGreeter);
+
         public GreeterRef() : base(null)
         {
         }
 
-        public GreeterRef(IActorRef actor) : base(actor)
+        public GreeterRef(IRequestTarget target) : base(target)
         {
         }
 
-        public GreeterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
+        public GreeterRef(IRequestTarget target, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(target, requestWaiter, timeout)
         {
         }
 
@@ -150,12 +151,12 @@ namespace Domain
 
         public GreeterRef WithRequestWaiter(IRequestWaiter requestWaiter)
         {
-            return new GreeterRef(Actor, requestWaiter, Timeout);
+            return new GreeterRef(Target, requestWaiter, Timeout);
         }
 
         public GreeterRef WithTimeout(TimeSpan? timeout)
         {
-            return new GreeterRef(Actor, RequestWaiter, timeout);
+            return new GreeterRef(Target, RequestWaiter, timeout);
         }
 
         public Task<System.Int32> GetHelloCount()
@@ -194,20 +195,20 @@ namespace Domain
     [ProtoContract]
     public class SurrogateForIGreeter
     {
-        [ProtoMember(1)] public IActorRef Actor;
+        [ProtoMember(1)] public IRequestTarget Target;
 
         [ProtoConverter]
         public static SurrogateForIGreeter Convert(IGreeter value)
         {
             if (value == null) return null;
-            return new SurrogateForIGreeter { Actor = ((GreeterRef)value).Actor };
+            return new SurrogateForIGreeter { Target = ((GreeterRef)value).Target };
         }
 
         [ProtoConverter]
         public static IGreeter Convert(SurrogateForIGreeter value)
         {
             if (value == null) return null;
-            return new GreeterRef(value.Actor);
+            return new GreeterRef(value.Target);
         }
     }
 }

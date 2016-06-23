@@ -14,28 +14,27 @@ using ProtoBuf;
 using TypeAlias;
 using System.ComponentModel;
 
-#region SurrogateForIActorRef
+#region SurrogateForIRequestTarget
 
 namespace Domain.Interface
 {
     [ProtoContract]
-    public class SurrogateForIActorRef
+    public class SurrogateForIRequestTarget
     {
         [ProtoMember(1)] public int Id;
 
         [ProtoConverter]
-        public static SurrogateForIActorRef Convert(IActorRef value)
+        public static SurrogateForIRequestTarget Convert(IRequestTarget value)
         {
             if (value == null) return null;
-            var actor = ((BoundActorRef)value);
-            return new SurrogateForIActorRef { Id = actor.Id };
+            return new SurrogateForIRequestTarget { Id = ((BoundActorTarget)value).Id };
         }
 
         [ProtoConverter]
-        public static IActorRef Convert(SurrogateForIActorRef value)
+        public static IRequestTarget Convert(SurrogateForIRequestTarget value)
         {
             if (value == null) return null;
-            return new BoundActorRef(value.Id);
+            return new BoundActorTarget(value.Id);
         }
     }
 }
@@ -119,15 +118,17 @@ namespace Domain.Interface
 
     public class UserRef : InterfacedActorRef, IUser, IUser_NoReply
     {
+        public override Type InterfaceType => typeof(IUser);
+
         public UserRef() : base(null)
         {
         }
 
-        public UserRef(IActorRef actor) : base(actor)
+        public UserRef(IRequestTarget target) : base(target)
         {
         }
 
-        public UserRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
+        public UserRef(IRequestTarget target, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(target, requestWaiter, timeout)
         {
         }
 
@@ -138,12 +139,12 @@ namespace Domain.Interface
 
         public UserRef WithRequestWaiter(IRequestWaiter requestWaiter)
         {
-            return new UserRef(Actor, requestWaiter, Timeout);
+            return new UserRef(Target, requestWaiter, Timeout);
         }
 
         public UserRef WithTimeout(TimeSpan? timeout)
         {
-            return new UserRef(Actor, RequestWaiter, timeout);
+            return new UserRef(Target, RequestWaiter, timeout);
         }
 
         public Task AddNote(System.Int32 id, System.String note)
@@ -198,20 +199,20 @@ namespace Domain.Interface
     [ProtoContract]
     public class SurrogateForIUser
     {
-        [ProtoMember(1)] public IActorRef Actor;
+        [ProtoMember(1)] public IRequestTarget Target;
 
         [ProtoConverter]
         public static SurrogateForIUser Convert(IUser value)
         {
             if (value == null) return null;
-            return new SurrogateForIUser { Actor = ((UserRef)value).Actor };
+            return new SurrogateForIUser { Target = ((UserRef)value).Target };
         }
 
         [ProtoConverter]
         public static IUser Convert(SurrogateForIUser value)
         {
             if (value == null) return null;
-            return new UserRef(value.Actor);
+            return new UserRef(value.Target);
         }
     }
 }
@@ -289,15 +290,17 @@ namespace Domain.Interface
 
     public class UserLoginRef : InterfacedActorRef, IUserLogin, IUserLogin_NoReply
     {
+        public override Type InterfaceType => typeof(IUserLogin);
+
         public UserLoginRef() : base(null)
         {
         }
 
-        public UserLoginRef(IActorRef actor) : base(actor)
+        public UserLoginRef(IRequestTarget target) : base(target)
         {
         }
 
-        public UserLoginRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
+        public UserLoginRef(IRequestTarget target, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(target, requestWaiter, timeout)
         {
         }
 
@@ -308,12 +311,12 @@ namespace Domain.Interface
 
         public UserLoginRef WithRequestWaiter(IRequestWaiter requestWaiter)
         {
-            return new UserLoginRef(Actor, requestWaiter, Timeout);
+            return new UserLoginRef(Target, requestWaiter, Timeout);
         }
 
         public UserLoginRef WithTimeout(TimeSpan? timeout)
         {
-            return new UserLoginRef(Actor, RequestWaiter, timeout);
+            return new UserLoginRef(Target, RequestWaiter, timeout);
         }
 
         public Task<Domain.Interface.LoginResult> Login(Domain.Interface.IUserEventObserver observer)
@@ -336,20 +339,20 @@ namespace Domain.Interface
     [ProtoContract]
     public class SurrogateForIUserLogin
     {
-        [ProtoMember(1)] public IActorRef Actor;
+        [ProtoMember(1)] public IRequestTarget Target;
 
         [ProtoConverter]
         public static SurrogateForIUserLogin Convert(IUserLogin value)
         {
             if (value == null) return null;
-            return new SurrogateForIUserLogin { Actor = ((UserLoginRef)value).Actor };
+            return new SurrogateForIUserLogin { Target = ((UserLoginRef)value).Target };
         }
 
         [ProtoConverter]
         public static IUserLogin Convert(SurrogateForIUserLogin value)
         {
             if (value == null) return null;
-            return new UserLoginRef(value.Actor);
+            return new UserLoginRef(value.Target);
         }
     }
 }

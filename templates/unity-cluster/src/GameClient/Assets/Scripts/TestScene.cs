@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Net;
+using Akka.Interfaced.SlimSocket;
 using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
 using Domain.Data;
@@ -12,37 +13,39 @@ public class TestScene : MonoBehaviour, IUserEventObserver
 {
     public Text LogText;
 
-    private readonly ILog _logger;
-    private Communicator _comm;
     private TrackableUserContext _userContext;
-
-    public TestScene()
-    {
-        _logger = LogManager.GetLogger("Test");
-    }
 
     private void Start()
     {
-        LogText.text = "";
-
-        _comm = CommunicatorHelper.CreateCommunicator<DomainProtobufSerializer>(
-            _logger, new IPEndPoint(IPAddress.Loopback, 9001));
-        _comm.Start();
-
-        StartCoroutine(ProcessTest());
+        StartCoroutine(ProcessTest(ChannelType.Tcp));
     }
 
-    IEnumerator ProcessTest()
+    IEnumerator ProcessTest(ChannelType channelType)
     {
-        yield return new WaitForSeconds(1);
+        LogText.text = "ProcessTest(" + channelType + ")\n";
 
-        WriteLine("Start ProcessTest");
-        WriteLine("");
+        // create channel
+
+        var channelFactory = ChannelFactoryBuilder.Build<DomainProtobufSerializer>(
+            endPoint: new IPEndPoint(IPAddress.Loopback, 5000),
+            createChannelLogger: () => LogManager.GetLogger("Channel"));
+        channelFactory.Type = channelType;
+        var channel = channelFactory.Create();
+
+        // connect to gateway
+
+        var t0 = channel.ConnectAsync();
+        yield return t0.WaitHandle;
+        if (t0.Exception != null)
+        {
+            WriteLine("Connection Failed: " + t0.Exception.Message);
+            yield break;
+        }
 
         // login with an user-login actor
 
-        var userLogin = _comm.CreateRef<UserLoginRef>();
-        var observer = _comm.CreateObserver<IUserEventObserver>(this);
+        var userLogin = channel.CreateRef<UserLoginRef>();
+        var observer = channel.CreateObserver<IUserEventObserver>(this);
 
         var t1 = userLogin.Login(observer);
         yield return t1.WaitHandle;
@@ -72,6 +75,8 @@ public class TestScene : MonoBehaviour, IUserEventObserver
         WriteLine("");
 
         WriteLine("End ProcessTest");
+
+        channel.Close();
     }
 
     void WriteLine(string text)

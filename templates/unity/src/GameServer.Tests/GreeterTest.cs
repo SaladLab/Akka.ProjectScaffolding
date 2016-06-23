@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Net;
 using Akka.Actor;
+using Akka.Interfaced;
 using Akka.TestKit.Xunit2;
 using Domain;
 using Xunit;
@@ -11,8 +12,7 @@ namespace GameServer.Tests
     {
         private GreeterRef CreateGreeterActor()
         {
-            var greeter = ActorOfAsTestActorRef<Greeter>(Props.Create<Greeter>(null, new IPEndPoint(IPAddress.Any, 0)));
-            return new GreeterRef(greeter);
+            return Sys.InterfacedActorOf(() => new Greeter(null, new IPEndPoint(IPAddress.Any, 0))).Cast<GreeterRef>();
         }
 
         [Fact]

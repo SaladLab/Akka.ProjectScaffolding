@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using Akka.Actor;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
+using Akka.Interfaced.SlimServer;
 using Common.Logging;
 using Domain;
 
@@ -16,8 +16,7 @@ namespace GameServer
         private HelloGenerator _helloGenerator;
         private int _count;
 
-        public Greeter(IActorRef clientSession,
-                       EndPoint clientRemoteEndPoint)
+        public Greeter(ActorBoundChannelRef channel, IPEndPoint clientRemoteEndPoint)
         {
             _logger = LogManager.GetLogger($"UserLoginActor({clientRemoteEndPoint})");
             _helloGenerator = new HelloGenerator(who => $"Hello {who}!");

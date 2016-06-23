@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Net;
+using Akka.Interfaced.SlimSocket;
 using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
 using Domain;
@@ -10,33 +11,39 @@ public class TestScene : MonoBehaviour
 {
     public Text LogText;
 
-    private readonly ILog _logger;
-    private Communicator _comm;
-
-    public TestScene()
-    {
-        _logger = LogManager.GetLogger("Test");
-    }
-
     private void Start()
     {
-        LogText.text = "";
-
-        _comm = CommunicatorHelper.CreateCommunicator<DomainProtobufSerializer>(
-            _logger, new IPEndPoint(IPAddress.Loopback, 5000));
-        _comm.Start();
-
-        StartCoroutine(ProcessTest());
+        StartCoroutine(ProcessTest(ChannelType.Tcp));
     }
 
-    IEnumerator ProcessTest()
+    IEnumerator ProcessTest(ChannelType channelType)
     {
-        yield return new WaitForSeconds(1);
+        LogText.text = "ProcessTest(" + channelType + ")\n";
+
+        // Create channel
+
+        var channelFactory = ChannelFactoryBuilder.Build<DomainProtobufSerializer>(
+            endPoint: new IPEndPoint(IPAddress.Loopback, 5000),
+            createChannelLogger: () => LogManager.GetLogger("Channel"));
+        channelFactory.Type = channelType;
+        var channel = channelFactory.Create();
+
+        // Connecto to gateway
+
+        var t0 = channel.ConnectAsync();
+        yield return t0.WaitHandle;
+        if (t0.Exception != null)
+        {
+            WriteLine("Connection Failed: " + t0.Exception.Message);
+            yield break;
+        }
+
+        // Start communicating with actors via channel
+
+        var greeter = channel.CreateRef<GreeterRef>();
 
         WriteLine("Start ProcessTest");
         WriteLine("");
-
-        var greeter = _comm.CreateRef<GreeterRef>();
 
         var t1 = greeter.Hello("Alice");
         yield return t1.WaitHandle;
@@ -52,6 +59,8 @@ public class TestScene : MonoBehaviour
 
         WriteLine("");
         WriteLine("End ProcessTest");
+
+        channel.Close();
     }
 
     void WriteLine(string text)

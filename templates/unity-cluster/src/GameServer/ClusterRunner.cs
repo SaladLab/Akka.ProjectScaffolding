@@ -10,12 +10,13 @@ using Akka.Cluster.Utility;
 using Akka.Configuration;
 using Akka.Interfaced;
 using Akka.Interfaced.ProtobufSerializer;
-using Akka.Interfaced.SlimSocket.Base;
+using Akka.Interfaced.SlimSocket;
 using Akka.Interfaced.SlimSocket.Server;
 using Common.Logging;
 using Domain.Interface;
 using ProtoBuf.Meta;
 using TypeAlias;
+using Akka.Interfaced.SlimServer;
 
 namespace GameServer
 {
@@ -94,7 +95,7 @@ namespace GameServer
 
         public void Shutdown()
         {
-            Console.WriteLine("Shutdown: User Listen");
+            Console.WriteLine("Shutdown: User Gateway");
             {
                 var tasks = GetRoleActors("user").Select(
                     actors => actors[0].GracefulStop(TimeSpan.FromMinutes(1),
@@ -102,7 +103,7 @@ namespace GameServer
                 Task.WhenAll(tasks.ToArray()).Wait();
             }
 
-            Console.WriteLine("Shutdown: Users");
+            Console.WriteLine("Shutdown: User Table");
             {
                 var tasks = GetRoleActors("user-table").Select(
                     actors => actors[0].GracefulStop(TimeSpan.FromMinutes(1),
@@ -158,41 +159,40 @@ namespace GameServer
     public class UserClusterSystem
     {
         private readonly ClusterNodeContext _context;
-        private readonly TcpConnectionSettings _tcpConnectionSettings;
 
         public UserClusterSystem(ClusterNodeContext context)
         {
             _context = context;
-
-            var typeModel = TypeModel.Create();
-            Akka.Interfaced.SlimSocket.Base.AutoSurrogate.Register(typeModel);
-            _tcpConnectionSettings = new TcpConnectionSettings();
-            _tcpConnectionSettings.PacketSerializer = PacketSerializer.CreatePacketSerializer();
         }
 
-        public IActorRef Start(int port)
+        public async Task<GatewayRef> Start(ChannelType type, int port)
         {
-            var logger = LogManager.GetLogger("ClientGateway");
-            var clientGateway = _context.System.ActorOf(Props.Create(() => new ClientGateway(logger, CreateSession)));
-            clientGateway.Tell(new ClientGatewayMessage.Start(new IPEndPoint(IPAddress.Any, port)));
-            return clientGateway;
-        }
+            var serializer = PacketSerializer.CreatePacketSerializer();
 
-        private IActorRef CreateSession(IActorContext context, Socket socket)
-        {
-            var logger = LogManager.GetLogger($"Client({socket.RemoteEndPoint})");
-            return context.ActorOf(Props.Create(
-                () => new ClientSession(logger, socket, _tcpConnectionSettings, CreateInitialActor)));
-        }
-
-        private Tuple<IActorRef, ActorBoundSessionMessage.InterfaceType[]>[] CreateInitialActor(IActorContext context, Socket socket)
-        {
-            return new[]
+            var initiator = new GatewayInitiator
             {
-                Tuple.Create(
-                    context.ActorOf(Props.Create(() => new UserLoginActor(_context, context.Self, socket.RemoteEndPoint))),
-                    new[] { new ActorBoundSessionMessage.InterfaceType(typeof(IUserLogin)) })
+                ListenEndPoint = new IPEndPoint(IPAddress.Any, port),
+                GatewayLogger = LogManager.GetLogger($"Gateway({type})"),
+                CreateChannelLogger = (ep, _) => LogManager.GetLogger($"Channel({ep}"),
+                ConnectionSettings = new TcpConnectionSettings { PacketSerializer = serializer },
+                PacketSerializer = serializer,
+                CreateInitialActors = (context, connection) => new[]
+                {
+                    Tuple.Create(
+                        context.ActorOf(Props.Create(() =>
+                            new UserLoginActor(_context, context.Self.Cast<ActorBoundChannelRef>(), GatewayInitiator.GetRemoteEndPoint(connection)))),
+                        new TaggedType[] { typeof(IUserLogin) },
+                        (ActorBindingFlags)0)
+                }
             };
+
+            var gateway = (type == ChannelType.Tcp)
+                ? _context.System.ActorOf(Props.Create(() => new TcpGateway(initiator)), "TcpGateway").Cast<GatewayRef>()
+                : _context.System.ActorOf(Props.Create(() => new UdpGateway(initiator)), "UdpGateway").Cast<GatewayRef>();
+
+            await gateway.Start();
+
+            return gateway;
         }
     }
 }

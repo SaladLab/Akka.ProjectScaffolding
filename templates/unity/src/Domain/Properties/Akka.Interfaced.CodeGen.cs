@@ -107,15 +107,17 @@ namespace Domain
 
     public class GreeterRef : InterfacedActorRef, IGreeter, IGreeter_NoReply
     {
+        public override Type InterfaceType => typeof(IGreeter);
+
         public GreeterRef() : base(null)
         {
         }
 
-        public GreeterRef(IActorRef actor) : base(actor)
+        public GreeterRef(IRequestTarget target) : base(target)
         {
         }
 
-        public GreeterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(actor, requestWaiter, timeout)
+        public GreeterRef(IRequestTarget target, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(target, requestWaiter, timeout)
         {
         }
 
@@ -126,12 +128,12 @@ namespace Domain
 
         public GreeterRef WithRequestWaiter(IRequestWaiter requestWaiter)
         {
-            return new GreeterRef(Actor, requestWaiter, Timeout);
+            return new GreeterRef(Target, requestWaiter, Timeout);
         }
 
         public GreeterRef WithTimeout(TimeSpan? timeout)
         {
-            return new GreeterRef(Actor, RequestWaiter, timeout);
+            return new GreeterRef(Target, RequestWaiter, timeout);
         }
 
         public Task<System.Int32> GetHelloCount()
@@ -170,20 +172,20 @@ namespace Domain
     [ProtoContract]
     public class SurrogateForIGreeter
     {
-        [ProtoMember(1)] public IActorRef Actor;
+        [ProtoMember(1)] public IRequestTarget Target;
 
         [ProtoConverter]
         public static SurrogateForIGreeter Convert(IGreeter value)
         {
             if (value == null) return null;
-            return new SurrogateForIGreeter { Actor = ((GreeterRef)value).Actor };
+            return new SurrogateForIGreeter { Target = ((GreeterRef)value).Target };
         }
 
         [ProtoConverter]
         public static IGreeter Convert(SurrogateForIGreeter value)
         {
             if (value == null) return null;
-            return new GreeterRef(value.Actor);
+            return new GreeterRef(value.Target);
         }
     }
 
