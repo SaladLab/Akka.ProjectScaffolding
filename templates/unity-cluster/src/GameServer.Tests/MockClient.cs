@@ -6,8 +6,7 @@ using Akka.Interfaced;
 using Akka.Interfaced.SlimServer;
 using Akka.Interfaced.TestKit;
 using Akka.TestKit;
-using Domain.Data;
-using Domain.Interface;
+using Domain;
 
 namespace GameServer.Tests
 {

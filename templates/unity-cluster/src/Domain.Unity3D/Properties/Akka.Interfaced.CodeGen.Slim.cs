@@ -16,7 +16,7 @@ using System.ComponentModel;
 
 #region SurrogateForIRequestTarget
 
-namespace Domain.Interface
+namespace Domain
 {
     [ProtoContract]
     public class SurrogateForIRequestTarget
@@ -40,9 +40,9 @@ namespace Domain.Interface
 }
 
 #endregion
-#region Domain.Interface.IUser
+#region Domain.IUser
 
-namespace Domain.Interface
+namespace Domain
 {
     [PayloadTable(typeof(IUser), PayloadTableKind.Request)]
     public static class IUser_PayloadTable
@@ -218,9 +218,9 @@ namespace Domain.Interface
 }
 
 #endregion
-#region Domain.Interface.IUserLogin
+#region Domain.IUserLogin
 
-namespace Domain.Interface
+namespace Domain
 {
     [PayloadTable(typeof(IUserLogin), PayloadTableKind.Request)]
     public static class IUserLogin_PayloadTable
@@ -236,7 +236,7 @@ namespace Domain.Interface
         public class Login_Invoke
             : IInterfacedPayload, IAsyncInvokable, IPayloadObserverUpdatable
         {
-            [ProtoMember(1)] public Domain.Interface.IUserEventObserver observer;
+            [ProtoMember(1)] public Domain.IUserEventObserver observer;
 
             public Type GetInterfaceType()
             {
@@ -261,7 +261,7 @@ namespace Domain.Interface
         public class Login_Return
             : IInterfacedPayload, IValueGetable, IPayloadActorRefUpdatable
         {
-            [ProtoMember(1)] public Domain.Interface.LoginResult v;
+            [ProtoMember(1)] public Domain.LoginResult v;
 
             public Type GetInterfaceType()
             {
@@ -285,7 +285,7 @@ namespace Domain.Interface
 
     public interface IUserLogin_NoReply
     {
-        void Login(Domain.Interface.IUserEventObserver observer);
+        void Login(Domain.IUserEventObserver observer);
     }
 
     public class UserLoginRef : InterfacedActorRef, IUserLogin, IUserLogin_NoReply
@@ -319,15 +319,15 @@ namespace Domain.Interface
             return new UserLoginRef(Target, RequestWaiter, timeout);
         }
 
-        public Task<Domain.Interface.LoginResult> Login(Domain.Interface.IUserEventObserver observer)
+        public Task<Domain.LoginResult> Login(Domain.IUserEventObserver observer)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = (UserEventObserver)observer }
             };
-            return SendRequestAndReceive<Domain.Interface.LoginResult>(requestMessage);
+            return SendRequestAndReceive<Domain.LoginResult>(requestMessage);
         }
 
-        void IUserLogin_NoReply.Login(Domain.Interface.IUserEventObserver observer)
+        void IUserLogin_NoReply.Login(Domain.IUserEventObserver observer)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = (UserEventObserver)observer }
@@ -360,7 +360,7 @@ namespace Domain.Interface
 #endregion
 #region SurrogateForINotificationChannel
 
-namespace Domain.Interface
+namespace Domain
 {
     [ProtoContract]
     public class SurrogateForINotificationChannel
@@ -381,9 +381,9 @@ namespace Domain.Interface
 }
 
 #endregion
-#region Domain.Interface.IUserEventObserver
+#region Domain.IUserEventObserver
 
-namespace Domain.Interface
+namespace Domain
 {
     [PayloadTable(typeof(IUserEventObserver), PayloadTableKind.Notification)]
     public static class IUserEventObserver_PayloadTable
@@ -398,7 +398,7 @@ namespace Domain.Interface
         [ProtoContract, TypeAlias]
         public class UserContextChange_Invoke : IInterfacedPayload, IInvokable
         {
-            [ProtoMember(1)] public Domain.Data.TrackableUserContextTracker userContextTracker;
+            [ProtoMember(1)] public Domain.TrackableUserContextTracker userContextTracker;
 
             public Type GetInterfaceType()
             {
@@ -424,7 +424,7 @@ namespace Domain.Interface
         {
         }
 
-        public void UserContextChange(Domain.Data.TrackableUserContextTracker userContextTracker)
+        public void UserContextChange(Domain.TrackableUserContextTracker userContextTracker)
         {
             var payload = new IUserEventObserver_PayloadTable.UserContextChange_Invoke { userContextTracker = userContextTracker };
             Notify(payload);

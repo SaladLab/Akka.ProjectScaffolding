@@ -5,8 +5,7 @@ using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
 using Akka.Interfaced.SlimServer;
 using Common.Logging;
-using Domain.Data;
-using Domain.Interface;
+using Domain;
 
 namespace GameServer
 {

@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Configuration;
-using Domain.Interface;
+using Domain;
 
 namespace GameServer
 {

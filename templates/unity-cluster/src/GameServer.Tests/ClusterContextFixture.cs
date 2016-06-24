@@ -3,7 +3,7 @@ using Akka.Actor;
 using Akka.Cluster.Utility;
 using Akka.Interfaced;
 using Akka.TestKit;
-using Domain.Interface;
+using Domain;
 
 namespace GameServer.Tests
 {

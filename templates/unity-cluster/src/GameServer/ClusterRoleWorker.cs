@@ -9,7 +9,7 @@ using Akka.Interfaced.SlimServer;
 using Akka.Interfaced.SlimSocket;
 using Akka.Interfaced.SlimSocket.Server;
 using Common.Logging;
-using Domain.Interface;
+using Domain;
 
 namespace GameServer
 {

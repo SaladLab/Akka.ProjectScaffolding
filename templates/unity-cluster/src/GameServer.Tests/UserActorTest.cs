@@ -3,8 +3,7 @@ using Akka.Actor;
 using Akka.Cluster.Utility;
 using Akka.Interfaced;
 using Akka.TestKit.Xunit2;
-using Domain.Data;
-using Domain.Interface;
+using Domain;
 using Xunit;
 
 namespace GameServer.Tests
