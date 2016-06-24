@@ -1,5 +1,7 @@
 # Akka.ProjectScaffolding
 
+[![Build status](https://ci.appveyor.com/api/projects/status/il7w2t6bxuy82d2b?svg=true)](https://ci.appveyor.com/project/veblush/akka-projectscaffolding)
+
 A project generator which creates C# projects using Akka.NET and Unity3D.
 
 ### How to use
