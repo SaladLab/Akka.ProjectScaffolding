@@ -23,13 +23,13 @@ namespace GameServer
             var standAlone = args.Length > 0 && args[0] == "standalone";
             if (standAlone)
             {
-                clusterRunner.LaunchNode(3001, 9001, "user-table", "user");
+                await clusterRunner.LaunchNode(3001, 9001, "user-table", "user");
             }
             else
             {
-                clusterRunner.LaunchNode(3001, 0, "user-table");
-                clusterRunner.LaunchNode(3011, 9001, "user");
-                clusterRunner.LaunchNode(3012, 9002, "user");
+                await clusterRunner.LaunchNode(3001, 0, "user-table");
+                await clusterRunner.LaunchNode(3011, 9001, "user");
+                await clusterRunner.LaunchNode(3012, 9002, "user");
             }
 
             try
@@ -40,6 +40,8 @@ namespace GameServer
             {
                 // ignore cancellation exception
             }
+
+            await clusterRunner.Shutdown();
         }
 
         private ClusterRunner CreateClusterRunner()

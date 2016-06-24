@@ -51,7 +51,7 @@ namespace GameServer
             IActorRef user;
             try
             {
-                user = Context.System.ActorOf(
+                user = Context.ActorOf(
                     Props.Create(() => new UserActor(_clusterContext, _channel, userId, userContext, observer)),
                     "user_" + userId);
             }

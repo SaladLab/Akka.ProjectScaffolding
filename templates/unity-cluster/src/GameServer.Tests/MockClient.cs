@@ -2,34 +2,34 @@
 using System.Net;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Interfaced;
+using Akka.Interfaced.SlimServer;
 using Akka.Interfaced.TestKit;
 using Akka.TestKit;
 using Domain.Data;
 using Domain.Interface;
-using Akka.Interfaced;
-using System.Net.Sockets;
 
 namespace GameServer.Tests
 {
     public class MockClient : IUserEventObserver
     {
         private ClusterNodeContext _clusterContext;
-        private IActorRef _clientSessionActor;
-        private TestActorBoundSession _clientSession;
+        private TestActorBoundChannel _channel;
+        private ActorBoundChannelRef _channelRef;
         private UserLoginRef _userLogin;
         private long _userId;
         private UserRef _user;
         private UserEventObserver _userEventObserver;
         private TrackableUserContext _userContext;
 
-        public IActorRef ClientSessionActor
+        public TestActorBoundChannel Channel
         {
-            get { return _clientSessionActor; }
-
+            get { return _channel; }
         }
-        public TestActorBoundSession ClientSession
+
+        public ActorBoundChannelRef ChannelRef
         {
-            get { return _clientSession; }
+            get { return _channelRef; }
         }
 
         public UserLoginRef UserLogin
@@ -56,20 +56,23 @@ namespace GameServer.Tests
         {
             _clusterContext = clusterContex;
 
-            var actorRef = new TestActorRef<TestActorBoundSession>(
+            var channel = new TestActorRef<TestActorBoundChannel>(
                 _clusterContext.System,
-                Props.Create(() => new TestActorBoundSession(CreateInitialActor)));
-            _clientSessionActor = actorRef;
-            _clientSession = actorRef.UnderlyingActor;
+                Props.Create(() => new TestActorBoundChannel(CreateInitialActor)));
+            _channel = channel.UnderlyingActor;
+            _channelRef = channel.Cast<ActorBoundChannelRef>();
 
-            _userLogin = _clientSession.CreateRef<UserLoginRef>();
+            _userLogin = _channel.CreateRef<UserLoginRef>();
         }
 
-        private Tuple<IActorRef, ActorBoundSessionMessage.InterfaceType[]>[] CreateInitialActor(IActorContext context) =>
+        private Tuple<IActorRef, TaggedType[], ActorBindingFlags>[] CreateInitialActor(IActorContext context) =>
             new[]
             {
-                Tuple.Create(context.ActorOf(Props.Create(() => new UserLoginActor(_clusterContext, context.Self, new IPEndPoint(0, 0)))),
-                             new[] { new ActorBoundSessionMessage.InterfaceType(typeof(IUserLogin)) })
+                Tuple.Create(
+                    context.ActorOf(Props.Create(() =>
+                        new UserLoginActor(_clusterContext, context.Self.Cast<ActorBoundChannelRef>(), new IPEndPoint(0, 0)))),
+                    new TaggedType[] { typeof(IUserLogin) },
+                    ActorBindingFlags.StopThenCloseChannel)
             };
 
         public async Task<LoginResult> LoginAsync()
@@ -77,7 +80,7 @@ namespace GameServer.Tests
             if (_user != null)
                 throw new InvalidOperationException("Already logined");
 
-            _userEventObserver = (UserEventObserver)_clientSession.CreateObserver<IUserEventObserver>(this);
+            _userEventObserver = (UserEventObserver)_channel.CreateObserver<IUserEventObserver>(this);
 
             var ret = await _userLogin.Login(_userEventObserver);
             _userId = ret.UserId;

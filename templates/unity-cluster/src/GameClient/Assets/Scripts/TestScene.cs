@@ -27,7 +27,7 @@ public class TestScene : MonoBehaviour, IUserEventObserver
         // create channel
 
         var channelFactory = ChannelFactoryBuilder.Build<DomainProtobufSerializer>(
-            endPoint: new IPEndPoint(IPAddress.Loopback, 5000),
+            endPoint: new IPEndPoint(IPAddress.Loopback, 9001),
             createChannelLogger: () => LogManager.GetLogger("Channel"));
         channelFactory.Type = channelType;
         var channel = channelFactory.Create();

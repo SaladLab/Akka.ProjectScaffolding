@@ -21,7 +21,7 @@ namespace GameServer.Tests
         }
 
         [Fact]
-        public async Task Test_UserLogin_Succeed()
+        public async Task UserLogin_Succeed()
         {
             var ret = await _client.LoginAsync();
 
@@ -33,19 +33,8 @@ namespace GameServer.Tests
 
             var tableRet = await _clusterContext.UserTable.Ask<DistributedActorTableMessage<long>.GetReply>(
                 new DistributedActorTableMessage<long>.Get(_client.UserId));
-            Assert.Equal(_client.ClientSession.GetBoundActorRef((UserRef)ret.User),
+            Assert.Equal(_client.Channel.GetBoundActorRef((UserRef)ret.User),
                          tableRet.Actor);
-        }
-
-        [Fact]
-        public void Test_UserDisconnect_ActorStopped()
-        {
-            var actor = _client.ClientSession.GetBoundActorRef(_client.UserLogin);
-            Watch(actor);
-
-            _client.ClientSessionActor.Tell(PoisonPill.Instance);
-
-            ExpectTerminated(actor);
         }
     }
 }

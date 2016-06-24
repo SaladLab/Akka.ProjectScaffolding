@@ -69,7 +69,8 @@ namespace GameServer
 
         private void FlushUserContext()
         {
-            _userEventObserver.UserContextChange(_userContext.Tracker);
+            if (_userEventObserver != null)
+                _userEventObserver.UserContextChange(_userContext.Tracker);
             _userContext.Tracker = new TrackableUserContextTracker();
         }
     }
