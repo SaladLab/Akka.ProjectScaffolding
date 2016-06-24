@@ -47,11 +47,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.SlimServer, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.SlimServer.0.4.1\lib\net45\Akka.Interfaced.SlimServer.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Interfaced.SlimServer.0.4.2\lib\net45\Akka.Interfaced.SlimServer.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.TestKit, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.TestKit.0.4.1\lib\net45\Akka.Interfaced.TestKit.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Interfaced.TestKit.0.4.2\lib\net45\Akka.Interfaced.TestKit.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.TestKit, Version=1.0.8.24, Culture=neutral, processorArchitecture=MSIL">

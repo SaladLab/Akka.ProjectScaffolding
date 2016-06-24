@@ -57,7 +57,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.SlimServer, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.SlimServer.0.4.1\lib\net45\Akka.Interfaced.SlimServer.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Interfaced.SlimServer.0.4.2\lib\net45\Akka.Interfaced.SlimServer.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.SlimSocket.Base, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -65,7 +65,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced.SlimSocket.Server, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.SlimSocket.Server.0.4.1-beta\lib\net45\Akka.Interfaced.SlimSocket.Server.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Interfaced.SlimSocket.Server.0.4.2-beta\lib\net45\Akka.Interfaced.SlimSocket.Server.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Serialization.Wire, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
