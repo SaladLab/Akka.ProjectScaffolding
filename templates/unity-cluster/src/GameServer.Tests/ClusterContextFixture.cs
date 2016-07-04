@@ -34,7 +34,7 @@ namespace GameServer.Tests
 
             context.UserTableContainer = new TestActorRef<DistributedActorTableContainer<long>>(
                 system,
-                Props.Create(() => new DistributedActorTableContainer<long>("User", context.ClusterActorDiscovery, null, null)));
+                Props.Create(() => new DistributedActorTableContainer<long>("User", context.ClusterActorDiscovery, null, null, InterfacedPoisonPill.Instance)));
 
             Context = context;
 

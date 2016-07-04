@@ -71,7 +71,7 @@ namespace GameServer.Tests
                     context.ActorOf(Props.Create(() =>
                         new UserLoginActor(_clusterContext, context.Self.Cast<ActorBoundChannelRef>(), new IPEndPoint(0, 0)))),
                     new TaggedType[] { typeof(IUserLogin) },
-                    ActorBindingFlags.StopThenCloseChannel)
+                    (ActorBindingFlags)0)
             };
 
         public async Task<LoginResult> LoginAsync()

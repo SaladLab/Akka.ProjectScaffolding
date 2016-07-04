@@ -25,15 +25,18 @@ public class TestScene : MonoBehaviour, IUserEventObserver
 
         // create channel
 
-        var channelFactory = ChannelFactoryBuilder.Build<DomainProtobufSerializer>(
-            endPoint: new IPEndPoint(IPAddress.Loopback, 9001),
-            createChannelLogger: () => LogManager.GetLogger("Channel"));
-        channelFactory.Type = channelType;
-        var channel = channelFactory.Create();
-
+        var communicator = UnityCommunicatorFactory.Create();
+        {
+            var channelFactory = communicator.ChannelFactory;
+            channelFactory.Type = ChannelType.Tcp;
+            channelFactory.ConnectEndPoint = new IPEndPoint(IPAddress.Loopback, 9001);
+            channelFactory.CreateChannelLogger = () => LogManager.GetLogger("Channel");
+            channelFactory.PacketSerializer = PacketSerializer.CreatePacketSerializer<DomainProtobufSerializer>();
+        }
+        communicator.CreateChannel();
         // connect to gateway
 
-        var t0 = channel.ConnectAsync();
+        var t0 = communicator.Channel.ConnectAsync();
         yield return t0.WaitHandle;
         if (t0.Exception != null)
         {
@@ -43,8 +46,8 @@ public class TestScene : MonoBehaviour, IUserEventObserver
 
         // login with an user-login actor
 
-        var userLogin = channel.CreateRef<UserLoginRef>();
-        var observer = channel.CreateObserver<IUserEventObserver>(this);
+        var userLogin = communicator.Channel.CreateRef<UserLoginRef>();
+        var observer = communicator.ObserverRegistry.Create<IUserEventObserver>(this);
 
         var t1 = userLogin.Login(observer);
         yield return t1.WaitHandle;
@@ -75,7 +78,8 @@ public class TestScene : MonoBehaviour, IUserEventObserver
 
         WriteLine("End ProcessTest");
 
-        channel.Close();
+        communicator.ObserverRegistry.Remove(observer);
+        communicator.Channel.Close();
     }
 
     void WriteLine(string text)

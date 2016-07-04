@@ -71,7 +71,7 @@ namespace GameServer
             // create UserTableContainer
 
             var container = Context.System.ActorOf(
-                Props.Create(() => new DistributedActorTableContainer<long>("User", Context.ClusterActorDiscovery, null, null)),
+                Props.Create(() => new DistributedActorTableContainer<long>("User", Context.ClusterActorDiscovery, null, null, InterfacedPoisonPill.Instance)),
                 "UserTableContainer");
             Context.UserTableContainer = container;
 

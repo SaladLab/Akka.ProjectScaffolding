@@ -22,19 +22,21 @@ namespace Domain
     public class SurrogateForIRequestTarget
     {
         [ProtoMember(1)] public int Id;
+        [ProtoMember(2)] public string Address;
 
         [ProtoConverter]
         public static SurrogateForIRequestTarget Convert(IRequestTarget value)
         {
             if (value == null) return null;
-            return new SurrogateForIRequestTarget { Id = ((BoundActorTarget)value).Id };
+            var target = ((BoundActorTarget)value);
+            return new SurrogateForIRequestTarget { Id = target.Id, Address = target.Address };
         }
 
         [ProtoConverter]
         public static IRequestTarget Convert(SurrogateForIRequestTarget value)
         {
             if (value == null) return null;
-            return new BoundActorTarget(value.Id);
+            return new BoundActorTarget(value.Id, value.Address);
         }
     }
 }
@@ -74,7 +76,7 @@ namespace Domain
         public class GetHelloCount_Return
             : IInterfacedPayload, IValueGetable
         {
-            [ProtoMember(1)] public System.Int32 v;
+            [ProtoMember(1)] public int v;
 
             public Type GetInterfaceType()
             {
@@ -91,7 +93,7 @@ namespace Domain
         public class Hello_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.String who;
+            [ProtoMember(1)] public string who;
 
             public Type GetInterfaceType()
             {
@@ -108,7 +110,7 @@ namespace Domain
         public class Hello_Return
             : IInterfacedPayload, IValueGetable
         {
-            [ProtoMember(1)] public System.String v;
+            [ProtoMember(1)] public string v;
 
             public Type GetInterfaceType()
             {
@@ -125,7 +127,7 @@ namespace Domain
     public interface IGreeter_NoReply
     {
         void GetHelloCount();
-        void Hello(System.String who);
+        void Hello(string who);
     }
 
     public class GreeterRef : InterfacedActorRef, IGreeter, IGreeter_NoReply
@@ -159,20 +161,20 @@ namespace Domain
             return new GreeterRef(Target, RequestWaiter, timeout);
         }
 
-        public Task<System.Int32> GetHelloCount()
+        public Task<int> GetHelloCount()
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IGreeter_PayloadTable.GetHelloCount_Invoke {  }
             };
-            return SendRequestAndReceive<System.Int32>(requestMessage);
+            return SendRequestAndReceive<int>(requestMessage);
         }
 
-        public Task<System.String> Hello(System.String who)
+        public Task<string> Hello(string who)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IGreeter_PayloadTable.Hello_Invoke { who = who }
             };
-            return SendRequestAndReceive<System.String>(requestMessage);
+            return SendRequestAndReceive<string>(requestMessage);
         }
 
         void IGreeter_NoReply.GetHelloCount()
@@ -183,7 +185,7 @@ namespace Domain
             SendRequest(requestMessage);
         }
 
-        void IGreeter_NoReply.Hello(System.String who)
+        void IGreeter_NoReply.Hello(string who)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IGreeter_PayloadTable.Hello_Invoke { who = who }
