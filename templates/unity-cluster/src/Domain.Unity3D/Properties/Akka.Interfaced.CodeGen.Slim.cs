@@ -22,19 +22,21 @@ namespace Domain
     public class SurrogateForIRequestTarget
     {
         [ProtoMember(1)] public int Id;
+        [ProtoMember(2)] public string Address;
 
         [ProtoConverter]
         public static SurrogateForIRequestTarget Convert(IRequestTarget value)
         {
             if (value == null) return null;
-            return new SurrogateForIRequestTarget { Id = ((BoundActorTarget)value).Id };
+            var target = ((BoundActorTarget)value);
+            return new SurrogateForIRequestTarget { Id = target.Id, Address = target.Address };
         }
 
         [ProtoConverter]
         public static IRequestTarget Convert(SurrogateForIRequestTarget value)
         {
             if (value == null) return null;
-            return new BoundActorTarget(value.Id);
+            return new BoundActorTarget(value.Id, value.Address);
         }
     }
 }
@@ -60,8 +62,8 @@ namespace Domain
         public class AddNote_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.Int32 id;
-            [ProtoMember(2)] public System.String note;
+            [ProtoMember(1)] public int id;
+            [ProtoMember(2)] public string note;
 
             public Type GetInterfaceType()
             {
@@ -78,7 +80,7 @@ namespace Domain
         public class RemoveNote_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.Int32 id;
+            [ProtoMember(1)] public int id;
 
             public Type GetInterfaceType()
             {
@@ -95,7 +97,7 @@ namespace Domain
         public class SetNickname_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.String nickname;
+            [ProtoMember(1)] public string nickname;
 
             public Type GetInterfaceType()
             {
@@ -111,9 +113,9 @@ namespace Domain
 
     public interface IUser_NoReply
     {
-        void AddNote(System.Int32 id, System.String note);
-        void RemoveNote(System.Int32 id);
-        void SetNickname(System.String nickname);
+        void AddNote(int id, string note);
+        void RemoveNote(int id);
+        void SetNickname(string nickname);
     }
 
     public class UserRef : InterfacedActorRef, IUser, IUser_NoReply
@@ -147,7 +149,7 @@ namespace Domain
             return new UserRef(Target, RequestWaiter, timeout);
         }
 
-        public Task AddNote(System.Int32 id, System.String note)
+        public Task AddNote(int id, string note)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IUser_PayloadTable.AddNote_Invoke { id = id, note = note }
@@ -155,7 +157,7 @@ namespace Domain
             return SendRequestAndWait(requestMessage);
         }
 
-        public Task RemoveNote(System.Int32 id)
+        public Task RemoveNote(int id)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IUser_PayloadTable.RemoveNote_Invoke { id = id }
@@ -163,7 +165,7 @@ namespace Domain
             return SendRequestAndWait(requestMessage);
         }
 
-        public Task SetNickname(System.String nickname)
+        public Task SetNickname(string nickname)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IUser_PayloadTable.SetNickname_Invoke { nickname = nickname }
@@ -171,7 +173,7 @@ namespace Domain
             return SendRequestAndWait(requestMessage);
         }
 
-        void IUser_NoReply.AddNote(System.Int32 id, System.String note)
+        void IUser_NoReply.AddNote(int id, string note)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IUser_PayloadTable.AddNote_Invoke { id = id, note = note }
@@ -179,7 +181,7 @@ namespace Domain
             SendRequest(requestMessage);
         }
 
-        void IUser_NoReply.RemoveNote(System.Int32 id)
+        void IUser_NoReply.RemoveNote(int id)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IUser_PayloadTable.RemoveNote_Invoke { id = id }
@@ -187,7 +189,7 @@ namespace Domain
             SendRequest(requestMessage);
         }
 
-        void IUser_NoReply.SetNickname(System.String nickname)
+        void IUser_NoReply.SetNickname(string nickname)
         {
             var requestMessage = new RequestMessage {
                 InvokePayload = new IUser_PayloadTable.SetNickname_Invoke { nickname = nickname }
