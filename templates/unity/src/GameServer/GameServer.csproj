@@ -52,10 +52,6 @@
       <HintPath>..\..\packages\Akka.Interfaced.LogFilter.0.5.0\lib\net45\Akka.Interfaced.LogFilter.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Akka.Interfaced.ProtobufSerializer, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Interfaced.ProtobufSerializer.0.5.0-beta\lib\net45\Akka.Interfaced.ProtobufSerializer.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Akka.Interfaced.SlimServer, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Akka.Interfaced.SlimServer.0.5.0\lib\net45\Akka.Interfaced.SlimServer.dll</HintPath>
       <Private>True</Private>
@@ -66,6 +62,10 @@
     </Reference>
     <Reference Include="Akka.Interfaced.SlimSocket.Server, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Akka.Interfaced.SlimSocket.Server.0.5.0-beta\lib\net45\Akka.Interfaced.SlimSocket.Server.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Akka.Logger.CommonLogging, Version=1.0.8.3, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Akka.Logger.CommonLogging.1.0.8\lib\net45\Akka.Logger.CommonLogging.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Serialization.Wire, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -121,6 +121,7 @@
       <HintPath>..\..\packages\System.Collections.Immutable.1.1.36\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -128,6 +129,10 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="Topshelf, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b800c4cfcdeea87b, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Topshelf.4.0.1\lib\net452\Topshelf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="TypeAlias, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\TypeAlias.1.1.2\lib\net40\TypeAlias.dll</HintPath>
       <Private>True</Private>

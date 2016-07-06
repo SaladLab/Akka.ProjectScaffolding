@@ -5,8 +5,9 @@ using Akka.Interfaced;
 using Akka.TestKit.Xunit2;
 using Domain;
 using Xunit;
+using Xunit.Abstractions;
 
-namespace GameServer.Tests
+namespace GameServer
 {
     public class UserActorTest : TestKit, IClassFixture<ClusterContextFixture>
     {
@@ -15,7 +16,8 @@ namespace GameServer.Tests
         private UserRef _user => _client.User;
         private TrackableUserContext _userContext => _client.UserContext;
 
-        public UserActorTest(ClusterContextFixture clusterContextFixture)
+        public UserActorTest(ITestOutputHelper output, ClusterContextFixture clusterContextFixture)
+            : base(output: output)
         {
             clusterContextFixture.Initialize(Sys);
             _clusterContext = clusterContextFixture.Context;
@@ -34,8 +36,7 @@ namespace GameServer.Tests
 
             ExpectTerminated(userActor);
 
-            var tableRet = await _clusterContext.UserTable.Ask<DistributedActorTableMessage<long>.GetReply>(
-                new DistributedActorTableMessage<long>.Get(_client.UserId));
+            var tableRet = await _clusterContext.UserTable.Get(_client.UserId);
             Assert.Null(tableRet.Actor);
         }
 

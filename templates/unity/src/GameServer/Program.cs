@@ -1,22 +1,24 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
+using Topshelf;
 
 namespace GameServer
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static int Main(string[] args)
         {
-            var service = new GameService();
-            var cts = new CancellationTokenSource();
-            var runTask = Task.Run(() => service.RunAsync(cts.Token));
+            return (int)HostFactory.Run(x =>
+            {
+                x.SetServiceName("GameServer");
+                x.SetDisplayName("GameServer for YourProject");
+                x.SetDescription("GameServer for YourProject using Akka.NET and Akka.Interfaced.");
 
-            Console.WriteLine("Enter to stop system.");
-            Console.ReadLine();
-
-            cts.Cancel();
-            runTask.Wait();
+                x.UseAssemblyInfoForServiceInfo();
+                x.RunAsLocalSystem();
+                x.StartAutomatically();
+                x.Service(() => new GameService());
+                x.EnableServiceRecovery(r => r.RestartService(1));
+            });
         }
     }
 }

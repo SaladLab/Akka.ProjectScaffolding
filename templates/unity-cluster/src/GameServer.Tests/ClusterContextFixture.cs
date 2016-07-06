@@ -2,10 +2,9 @@
 using Akka.Actor;
 using Akka.Cluster.Utility;
 using Akka.Interfaced;
-using Akka.TestKit;
 using Domain;
 
-namespace GameServer.Tests
+namespace GameServer
 {
     public class ClusterContextFixture : IDisposable
     {
@@ -22,23 +21,24 @@ namespace GameServer.Tests
 
         public void Initialize(ActorSystem system)
         {
+            DeadRequestProcessingActor.Install(system);
+
             var context = new ClusterNodeContext { System = system };
 
-            context.ClusterActorDiscovery = new TestActorRef<ClusterActorDiscovery>(
-                system,
-                Props.Create(() => new ClusterActorDiscovery(null)));
+            context.ClusterActorDiscovery = system.ActorOf(Props.Create(
+                      () => new ClusterActorDiscovery(null)));
 
-            context.UserTable = new TestActorRef<DistributedActorTable<long>>(
-                system,
-                Props.Create(() => new DistributedActorTable<long>("User", context.ClusterActorDiscovery, null, null)));
+            context.UserTable = new DistributedActorTableRef<long>(system.ActorOf(
+                Props.Create(() => new DistributedActorTable<long>(
+                    "User", context.ClusterActorDiscovery, null, null)),
+                "UserTable"));
 
-            context.UserTableContainer = new TestActorRef<DistributedActorTableContainer<long>>(
-                system,
-                Props.Create(() => new DistributedActorTableContainer<long>("User", context.ClusterActorDiscovery, null, null, InterfacedPoisonPill.Instance)));
+            context.UserTableContainer = new DistributedActorTableContainerRef<long>(system.ActorOf(
+                Props.Create(() => new DistributedActorTableContainer<long>(
+                    "User", context.ClusterActorDiscovery, null, null, InterfacedPoisonPill.Instance)),
+                "UserTableContainer"));
 
             Context = context;
-
-            DeadRequestProcessingActor.Install(system);
         }
 
         public void Dispose()

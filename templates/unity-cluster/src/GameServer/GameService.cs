@@ -1,14 +1,23 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Akka.Configuration;
+using System.Configuration;
+using Aim.ClusterNode;
+using Akka.Configuration.Hocon;
 using Domain;
+using Topshelf;
 
 namespace GameServer
 {
-    public class GameService
+    public class GameService : ServiceControl
     {
-        public async Task RunAsync(string[] args, CancellationToken cancellationToken)
+        private ClusterRunner _clusterRunner;
+        private string _runner;
+
+        public GameService(string runner)
+        {
+            _runner = runner;
+        }
+
+        bool ServiceControl.Start(HostControl hostControl)
         {
             // force interface assembly to be loaded before creating ProtobufSerializer
 
@@ -18,61 +27,30 @@ namespace GameServer
 
             // run cluster nodes
 
-            var clusterRunner = CreateClusterRunner();
+            var section = (AkkaConfigurationSection)ConfigurationManager.GetSection("akka");
+            var config = section.AkkaConfig;
+            var runner = new ClusterRunner(config, new[] { GetType().Assembly });
+            runner.CreateClusterNodeContext = () => new ClusterNodeContext();
 
-            var standAlone = args.Length > 0 && args[0] == "standalone";
-            if (standAlone)
-            {
-                await clusterRunner.LaunchNode(3001, 9001, "user-table", "user");
-            }
-            else
-            {
-                await clusterRunner.LaunchNode(3001, 0, "user-table");
-                await clusterRunner.LaunchNode(3011, 9001, "user");
-                await clusterRunner.LaunchNode(3012, 9002, "user");
-            }
+            var runnerConfig = config.GetValue("system.runner").GetObject();
+            var nodes = runnerConfig.GetKey(_runner ?? "default");
+            if (nodes == null)
+                throw new InvalidOperationException("Cannot find runner: " + _runner);
 
-            try
-            {
-                await Task.Delay(-1, cancellationToken);
-            }
-            catch (TaskCanceledException)
-            {
-                // ignore cancellation exception
-            }
+            runner.Launch(nodes.GetArray()).Wait();
+            _clusterRunner = runner;
 
-            await clusterRunner.Shutdown();
+            return true;
         }
 
-        private ClusterRunner CreateClusterRunner()
+        bool ServiceControl.Stop(HostControl hostControl)
         {
-            var commonConfig = ConfigurationFactory.ParseString(@"
-                akka {
-                  actor {
-                    provider = ""Akka.Cluster.ClusterActorRefProvider, Akka.Cluster""
-                    serializers {
-                      wire = ""Akka.Serialization.WireSerializer, Akka.Serialization.Wire""
-                      proto = ""Akka.Interfaced.ProtobufSerializer.ProtobufSerializer, Akka.Interfaced.ProtobufSerializer""
-                    }
-                    serialization-bindings {
-                      ""Akka.Interfaced.NotificationMessage, Akka.Interfaced-Base"" = proto
-                      ""Akka.Interfaced.RequestMessage, Akka.Interfaced-Base"" = proto
-                      ""Akka.Interfaced.ResponseMessage, Akka.Interfaced-Base"" = proto
-                      ""System.Object"" = wire
-                    }
-                  }
-                  remote {
-                    helios.tcp {
-                      hostname = ""127.0.0.1""
-                    }
-                  }
-                  cluster {
-                    seed-nodes = [""akka.tcp://GameCluster@127.0.0.1:3001""]
-                    auto-down-unreachable-after = 30s
-                  }
-                }");
-
-            return new ClusterRunner(commonConfig);
+            if (_clusterRunner != null)
+            {
+                _clusterRunner.Shutdown().Wait();
+                _clusterRunner = null;
+            }
+            return true;
         }
     }
 }

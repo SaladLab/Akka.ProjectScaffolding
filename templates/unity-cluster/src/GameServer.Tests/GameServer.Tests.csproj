@@ -8,7 +8,7 @@
     <ProjectGuid>{516944E4-41E8-40F4-893E-E7431C6D01E9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GameServer.Tests</RootNamespace>
+    <RootNamespace>GameServer</RootNamespace>
     <AssemblyName>GameServer.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -34,6 +34,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Aim.ClusterNode, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Aim.ClusterNode.0.1.0-beta1\lib\net45\Aim.ClusterNode.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Akka, Version=1.0.8.24, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Akka.1.0.8\lib\net45\Akka.dll</HintPath>
       <Private>True</Private>
@@ -43,7 +47,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Cluster.Utility, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Akka.Cluster.Utility.0.2.0-beta5\lib\net45\Akka.Cluster.Utility.dll</HintPath>
+      <HintPath>..\..\packages\Akka.Cluster.Utility.0.2.0-beta6\lib\net45\Akka.Cluster.Utility.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -72,6 +76,14 @@
     </Reference>
     <Reference Include="Akka.TestKit.Xunit2, Version=1.0.8.24, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Akka.TestKit.Xunit2.1.0.8\lib\net45\Akka.TestKit.Xunit2.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Common.Logging.3.3.1\lib\net40\Common.Logging.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging.Core, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Common.Logging.Core.3.3.1\lib\net40\Common.Logging.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Google.ProtocolBuffers, Version=2.4.1.555, Culture=neutral, PublicKeyToken=55f7125234beb589, processorArchitecture=MSIL">

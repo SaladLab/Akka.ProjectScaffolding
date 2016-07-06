@@ -2,7 +2,9 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Aim.ClusterNode;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.Cluster.Utility;
 using Akka.Interfaced;
 using Akka.Interfaced.SlimServer;
@@ -13,33 +15,21 @@ using Domain;
 
 namespace GameServer
 {
-    public abstract class ClusterRoleWorker
-    {
-        public ClusterNodeContext Context { get; }
-
-        public ClusterRoleWorker(ClusterNodeContext context)
-        {
-            Context = context;
-        }
-
-        public abstract Task Start();
-        public abstract Task Stop();
-    }
-
+    [ClusterRole("UserTable")]
     public class UserTableWorker : ClusterRoleWorker
     {
+        private ClusterNodeContext _context;
         private IActorRef _userTable;
 
-        public UserTableWorker(ClusterNodeContext context)
-            : base(context)
+        public UserTableWorker(ClusterNodeContext context, Config config)
         {
+            _context = context;
         }
 
         public override Task Start()
         {
-            _userTable = Context.System.ActorOf(
-                Props.Create(() => new DistributedActorTable<long>(
-                                        "User", Context.ClusterActorDiscovery, null, null)),
+            _userTable = _context.System.ActorOf(
+                Props.Create(() => new DistributedActorTable<long>("User", _context.ClusterActorDiscovery, null, null)),
                 "UserTable");
             return Task.CompletedTask;
         }
@@ -53,67 +43,75 @@ namespace GameServer
         }
     }
 
-    public class UserGatewayWorker : ClusterRoleWorker
+    [ClusterRole("User")]
+    public class UserWorker : ClusterRoleWorker
     {
+        private ClusterNodeContext _context;
+        private IActorRef _userContainer;
         private ChannelType _channelType;
         private IPEndPoint _listenEndPoint;
         private GatewayRef _gateway;
 
-        public UserGatewayWorker(ClusterNodeContext context, ChannelType channelType, IPEndPoint listenEndPoint)
-            : base(context)
+        public UserWorker(ClusterNodeContext context, Config config)
         {
-            _channelType = channelType;
-            _listenEndPoint = listenEndPoint;
+            _context = context;
+            _channelType = (ChannelType)Enum.Parse(typeof(ChannelType), config.GetString("type", "Tcp"));
+            _listenEndPoint = new IPEndPoint(IPAddress.Any, config.GetInt("port", 0));
         }
 
         public override async Task Start()
         {
             // create UserTableContainer
 
-            var container = Context.System.ActorOf(
-                Props.Create(() => new DistributedActorTableContainer<long>("User", Context.ClusterActorDiscovery, null, null, InterfacedPoisonPill.Instance)),
+            _userContainer = _context.System.ActorOf(
+                Props.Create(() => new DistributedActorTableContainer<long>("User", _context.ClusterActorDiscovery, null, null, InterfacedPoisonPill.Instance)),
                 "UserTableContainer");
-            Context.UserTableContainer = container;
+            _context.UserTableContainer = new DistributedActorTableContainerRef<long>(_userContainer);
 
             // create gateway for users to connect to
 
-            var serializer = PacketSerializer.CreatePacketSerializer();
-
-            var initiator = new GatewayInitiator
+            if (_listenEndPoint.Port != 0)
             {
-                ListenEndPoint = _listenEndPoint,
-                GatewayLogger = LogManager.GetLogger($"Gateway({_channelType})"),
-                CreateChannelLogger = (ep, _) => LogManager.GetLogger($"Channel({ep}"),
-                ConnectionSettings = new TcpConnectionSettings { PacketSerializer = serializer },
-                PacketSerializer = serializer,
-                CreateInitialActors = (context, connection) => new[]
+                var serializer = PacketSerializer.CreatePacketSerializer();
+
+                var name = "UserGateway";
+                var initiator = new GatewayInitiator
                 {
-                    Tuple.Create(
-                        context.ActorOf(Props.Create(() =>
-                            new UserLoginActor(Context, context.Self.Cast<ActorBoundChannelRef>(), GatewayInitiator.GetRemoteEndPoint(connection)))),
-                        new TaggedType[] { typeof(IUserLogin) },
-                        (ActorBindingFlags)0)
-                }
-            };
+                    ListenEndPoint = _listenEndPoint,
+                    GatewayLogger = LogManager.GetLogger(name),
+                    CreateChannelLogger = (ep, _) => LogManager.GetLogger($"Channel({ep}"),
+                    ConnectionSettings = new TcpConnectionSettings { PacketSerializer = serializer },
+                    PacketSerializer = serializer,
+                    CreateInitialActors = (context, connection) => new[]
+                    {
+                        Tuple.Create(
+                            context.ActorOf(Props.Create(() =>
+                                new UserLoginActor(_context, context.Self.Cast<ActorBoundChannelRef>(), GatewayInitiator.GetRemoteEndPoint(connection)))),
+                            new TaggedType[] { typeof(IUserLogin) },
+                            (ActorBindingFlags)0)
+                    }
+                };
 
-            var gateway = (_channelType == ChannelType.Tcp)
-                ? Context.System.ActorOf(Props.Create(() => new TcpGateway(initiator)), "TcpGateway").Cast<GatewayRef>()
-                : Context.System.ActorOf(Props.Create(() => new UdpGateway(initiator)), "UdpGateway").Cast<GatewayRef>();
-
-            await gateway.Start();
-
-            _gateway = gateway;
+                _gateway = (_channelType == ChannelType.Tcp)
+                    ? _context.System.ActorOf(Props.Create(() => new TcpGateway(initiator)), name).Cast<GatewayRef>()
+                    : _context.System.ActorOf(Props.Create(() => new UdpGateway(initiator)), name).Cast<GatewayRef>();
+                await _gateway.Start();
+            }
         }
 
         public override async Task Stop()
         {
+            // stop gateway
+
             if (_gateway != null)
             {
-                // stop and wait for being stopped.
                 await _gateway.Stop();
                 await _gateway.CastToIActorRef().GracefulStop(TimeSpan.FromSeconds(10), new Identify(0));
-                _gateway = null;
             }
+
+            // stop user container
+
+            await _userContainer.GracefulStop(TimeSpan.FromSeconds(10), PoisonPill.Instance);
         }
     }
 }

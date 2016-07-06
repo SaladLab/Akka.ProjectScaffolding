@@ -8,7 +8,7 @@
     <ProjectGuid>{39AF811E-155C-43F4-8B49-9B94AB8E7584}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Domain.Tests</RootNamespace>
+    <RootNamespace>Domain</RootNamespace>
     <AssemblyName>Domain.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

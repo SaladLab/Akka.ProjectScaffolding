@@ -2,7 +2,6 @@
 using System.Net;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Cluster.Utility;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
 using Akka.Interfaced.SlimServer;
@@ -62,9 +61,7 @@ namespace GameServer
 
             // register User in UserTable
 
-            var reply = await _clusterContext.UserTableContainer.Ask<DistributedActorTableMessage<long>.AddReply>(
-                new DistributedActorTableMessage<long>.Add(userId, user));
-
+            var reply = await _clusterContext.UserTableContainer.Add(userId, user);
             if (reply == null || reply.Added == false)
             {
                 _logger.Error($"Failed in registering user to user-table. ({userId})");

@@ -1,72 +1,57 @@
 ﻿using System;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Configuration;
 using Akka.Interfaced;
 using Akka.Interfaced.SlimServer;
 using Akka.Interfaced.SlimSocket;
 using Akka.Interfaced.SlimSocket.Server;
 using Common.Logging;
 using Domain;
+using Topshelf;
 
 namespace GameServer
 {
-    public class GameService
+    public class GameService : ServiceControl
     {
-        public async Task RunAsync(CancellationToken cancellationToken)
+        private ActorSystem _system;
+        private GatewayRef _gateway;
+
+        public GameService()
         {
-            var system = CreateActorSystem();
-
-            var tcpGateway = await StartListen(system, ChannelType.Tcp, 5000);
-            var udpGateway = await StartListen(system, ChannelType.Udp, 5000);
-
-            try
-            {
-                await Task.Delay(-1, cancellationToken);
-            }
-            catch (TaskCanceledException)
-            {
-                // ignore cancellation exception
-            }
-
-            await tcpGateway.Stop();
-            await udpGateway.Stop();
         }
 
-        private ActorSystem CreateActorSystem()
+        bool ServiceControl.Start(HostControl hostControl)
         {
-            var config = ConfigurationFactory.ParseString(@"
-                akka {
-                  actor {
-                    serializers {
-                      wire = ""Akka.Serialization.WireSerializer, Akka.Serialization.Wire""
-                      proto = ""Akka.Interfaced.ProtobufSerializer.ProtobufSerializer, Akka.Interfaced.ProtobufSerializer""
-                    }
-                    serialization-bindings {
-                      ""Akka.Interfaced.NotificationMessage, Akka.Interfaced-Base"" = proto
-                      ""Akka.Interfaced.RequestMessage, Akka.Interfaced-Base"" = proto
-                      ""Akka.Interfaced.ResponseMessage, Akka.Interfaced-Base"" = proto
-                      ""System.Object"" = wire
-                    }
-                  }
-                }");
+            // initialize actor system
+            _system = ActorSystem.Create("GameServer");
+            DeadRequestProcessingActor.Install(_system);
 
-            var system  = ActorSystem.Create("GameServer", config);
-            DeadRequestProcessingActor.Install(system);
+            // start gateway to accept clients
+            _gateway = StartListen(_system, ChannelType.Tcp, 5000).Result;
+            return true;
+        }
 
-            return system;
+        bool ServiceControl.Stop(HostControl hostControl)
+        {
+            // stop gateway
+            _gateway.Stop();
+            _gateway.CastToIActorRef().GracefulStop(TimeSpan.FromSeconds(10), new Identify(0)).Wait();
+
+            // terminate actor system
+            _system.Terminate().Wait();
+            return true;
         }
 
         private async Task<GatewayRef> StartListen(ActorSystem system, ChannelType type, int port)
         {
             var serializer = PacketSerializer.CreatePacketSerializer();
 
+            var name = $"Gateway({type})";
             var initiator = new GatewayInitiator
             {
                 ListenEndPoint = new IPEndPoint(IPAddress.Any, port),
-                GatewayLogger = LogManager.GetLogger($"Gateway({type})"),
+                GatewayLogger = LogManager.GetLogger(name),
                 CreateChannelLogger = (ep, _) => LogManager.GetLogger($"Channel({ep}"),
                 ConnectionSettings = new TcpConnectionSettings { PacketSerializer = serializer },
                 PacketSerializer = serializer,
@@ -81,8 +66,8 @@ namespace GameServer
             };
 
             var gateway = (type == ChannelType.Tcp)
-                ? system.ActorOf(Props.Create(() => new TcpGateway(initiator)), "TcpGateway").Cast<GatewayRef>()
-                : system.ActorOf(Props.Create(() => new UdpGateway(initiator)), "UdpGateway").Cast<GatewayRef>();
+                ? system.ActorOf(Props.Create(() => new TcpGateway(initiator)), name).Cast<GatewayRef>()
+                : system.ActorOf(Props.Create(() => new UdpGateway(initiator)), name).Cast<GatewayRef>();
 
             await gateway.Start();
 
