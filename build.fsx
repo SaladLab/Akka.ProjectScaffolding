@@ -63,7 +63,7 @@ Target "TestTemplates" <| fun _ ->
 Target "CI" <| fun _ -> ()
 
 Target "DevLink" <| fun _ ->
-    let depDirs = [ "../Akka.Interfaced"; "../Akka.Interfaced.SlimSocket"; "../Akka.Cluster.Utility" ]
+    let depDirs = [ "../Akka.Interfaced"; "../Akka.Interfaced.SlimSocket"; "../Akka.Cluster.Utility"; "../Aim.ClusterNode" ]
     devlink "./templates/unity/packages" depDirs
     devlink "./templates/unity-cluster/packages" depDirs
     
