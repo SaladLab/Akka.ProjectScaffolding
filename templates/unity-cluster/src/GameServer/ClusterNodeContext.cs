@@ -8,7 +8,5 @@ namespace GameServer
     {
         [ClusterActor("User")]
         public DistributedActorTableRef<long> UserTable;
-
-        public DistributedActorTableContainerRef<long> UserTableContainer;
     }
 }

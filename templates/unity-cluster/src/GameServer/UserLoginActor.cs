@@ -7,7 +7,6 @@ using Akka.Interfaced.LogFilter;
 using Akka.Interfaced.SlimServer;
 using Common.Logging;
 using Domain;
-using TrackableData;
 
 namespace GameServer
 {
@@ -28,63 +27,56 @@ namespace GameServer
             _channel = channel;
         }
 
-        async Task<LoginResult> IUserLogin.Login(IUserEventObserver observer)
+        async Task<Tuple<long, IUserInitiator>> IUserLogin.Login(string credential)
         {
-            // create user context
+            if (string.IsNullOrEmpty(credential))
+                throw new ResultException(ResultCodeType.ArgumentError);
 
-            var userContext = new TrackableUserContext
-            {
-                Data = new TrackableUserData
-                {
-                    Nickname = "",
-                    RegisterTime = DateTime.UtcNow,
-                },
-                Notes = new TrackableDictionary<int, string>()
-            };
-            userContext.SetDefaultTracker();
+            // verify crendential
+            var userId = GetUserIdFromCredential(credential);
+            if (userId == 0)
+                throw new ResultException(ResultCodeType.LoginCredentialError);
 
-            // make UserActor
+            // try to create user actor with user-id
+            var user = await _clusterContext.UserTable.WithTimeout(TimeSpan.FromSeconds(30)).GetOrCreate(userId, null);
+            if (user.Actor == null)
+                throw new ResultException(ResultCodeType.InternalError);
+            if (user.Created == false)
+                throw new ResultException(ResultCodeType.LoginAlreadyLoginedError);
 
-            var userId = CreateUserId();
-            IActorRef user;
+            // bound actor to this channel or new channel on user gateway
+            BoundActorTarget boundActor;
             try
             {
-                user = Context.ActorOf(
-                    Props.Create(() => new UserActor(_clusterContext, _channel, userId, userContext, observer)),
-                    "user_" + userId);
+                boundActor = await _channel.BindActorOrOpenChannel(
+                    user.Actor, new TaggedType[] { typeof(IUserInitiator) },
+                    ActorBindingFlags.OpenThenNotification | ActorBindingFlags.CloseThenStop | ActorBindingFlags.StopThenCloseChannel,
+                    "UserGateway", null);
             }
             catch (Exception e)
             {
-                _logger.Error($"Exception in creating UserActor({userId})", e);
-                throw new ResultException(ResultCodeType.LoginFailed);
+                _logger.Error($"BindActorOrOpenChannel error (UserId={userId})", e);
+                user.Actor.Tell(InterfacedPoisonPill.Instance);
+                throw new ResultException(ResultCodeType.InternalError);
             }
 
-            // register User in UserTable
+            // once login done, stop this
+            Self.Tell(InterfacedPoisonPill.Instance);
 
-            var reply = await _clusterContext.UserTableContainer.Add(userId, user);
-            if (reply == null || reply.Added == false)
-            {
-                _logger.Error($"Failed in registering user to user-table. ({userId})");
-                user.Tell(PoisonPill.Instance);
-                throw new ResultException(ResultCodeType.LoginFailed);
-            }
-
-            // bind user actor with client session, which makes client to communicate with this actor.
-
-            var boundActor = await _channel.BindActor(user.Cast<UserRef>(), ActorBindingFlags.CloseThenStop | ActorBindingFlags.StopThenCloseChannel);
-            return new LoginResult { UserId = userId, UserContext = userContext, User = boundActor.Cast<UserRef>() };
+            return Tuple.Create(userId, (IUserInitiator)boundActor.Cast<UserInitiatorRef>());
         }
 
-        private long CreateUserId()
+        private static long GetUserIdFromCredential(string credential)
         {
-            // a native int64 unique value generator.
-            // if you want to get a strong one, consider 128 bits key or external unique id generator.
+            // this is sample authentication. implement your requirement.
 
-            var scratches = new byte[8];
-            var bytes = Guid.NewGuid().ToByteArray();
-            for (var i = 0; i < bytes.Length; i++)
-                scratches[i % scratches.Length] ^= bytes[i];
-            return BitConverter.ToInt64(scratches, 0);
+            if (credential.StartsWith("C"))
+            {
+                long userId;
+                if (long.TryParse(credential.Substring(1), out userId))
+                    return userId;
+            }
+            return 0;
         }
     }
 }

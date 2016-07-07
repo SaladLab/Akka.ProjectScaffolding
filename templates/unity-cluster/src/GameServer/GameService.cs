@@ -2,6 +2,7 @@
 using System.Configuration;
 using Aim.ClusterNode;
 using Akka.Configuration.Hocon;
+using Common.Logging;
 using Domain;
 using Topshelf;
 
@@ -9,6 +10,7 @@ namespace GameServer
 {
     public class GameService : ServiceControl
     {
+        private ILog _log = LogManager.GetLogger("GameService");
         private ClusterRunner _clusterRunner;
         private string _runner;
 
@@ -19,11 +21,26 @@ namespace GameServer
 
         bool ServiceControl.Start(HostControl hostControl)
         {
+            _log.Info("Start");
+
             // force interface assembly to be loaded before creating ProtobufSerializer
 
             var type = typeof(IUser);
             if (type == null)
                 throw new InvalidProgramException("!");
+
+            // connect to redis
+
+            try
+            {
+                var cstr = ConfigurationManager.ConnectionStrings["Redis"].ConnectionString;
+                RedisStorage.Instance = new RedisStorage(cstr);
+            }
+            catch (Exception e)
+            {
+                _log.Error("Redis connection error", e);
+                return false;
+            }
 
             // run cluster nodes
 
@@ -35,7 +52,10 @@ namespace GameServer
             var runnerConfig = config.GetValue("system.runner").GetObject();
             var nodes = runnerConfig.GetKey(_runner ?? "default");
             if (nodes == null)
-                throw new InvalidOperationException("Cannot find runner: " + _runner);
+            {
+                _log.Error("Cannot find runner:" + _runner);
+                return false;
+            }
 
             runner.Launch(nodes.GetArray()).Wait();
             _clusterRunner = runner;
@@ -45,6 +65,8 @@ namespace GameServer
 
         bool ServiceControl.Stop(HostControl hostControl)
         {
+            _log.Info("Stop");
+
             if (_clusterRunner != null)
             {
                 _clusterRunner.Shutdown().Wait();

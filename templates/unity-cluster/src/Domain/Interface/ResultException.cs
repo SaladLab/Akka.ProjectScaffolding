@@ -7,7 +7,11 @@ namespace Domain
     public enum ResultCodeType
     {
         None = 0,
-        LoginFailed,
+        ArgumentError = 1,
+        InternalError = 2,
+        LoginCredentialError = 10,
+        LoginAlreadyLoginedError,
+        UserNeedToBeCreated = 20,
         NicknameInvalid,
         NoteInvalid,
         NoteDuplicate,

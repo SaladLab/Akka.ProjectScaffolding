@@ -220,29 +220,31 @@ namespace Domain
 }
 
 #endregion
-#region Domain.IUserLogin
+#region Domain.IUserInitiator
 
 namespace Domain
 {
-    [PayloadTable(typeof(IUserLogin), PayloadTableKind.Request)]
-    public static class IUserLogin_PayloadTable
+    [PayloadTable(typeof(IUserInitiator), PayloadTableKind.Request)]
+    public static class IUserInitiator_PayloadTable
     {
         public static Type[,] GetPayloadTypes()
         {
             return new Type[,] {
-                { typeof(Login_Invoke), typeof(Login_Return) },
+                { typeof(Create_Invoke), typeof(Create_Return) },
+                { typeof(Load_Invoke), typeof(Load_Return) },
             };
         }
 
         [ProtoContract, TypeAlias]
-        public class Login_Invoke
+        public class Create_Invoke
             : IInterfacedPayload, IAsyncInvokable, IPayloadObserverUpdatable
         {
             [ProtoMember(1)] public Domain.IUserEventObserver observer;
+            [ProtoMember(2)] public string nickname;
 
             public Type GetInterfaceType()
             {
-                return typeof(IUserLogin);
+                return typeof(IUserInitiator);
             }
 
             public Task<IValueGetable> InvokeAsync(object __target)
@@ -260,10 +262,193 @@ namespace Domain
         }
 
         [ProtoContract, TypeAlias]
+        public class Create_Return
+            : IInterfacedPayload, IValueGetable
+        {
+            [ProtoMember(1)] public Domain.TrackableUserContext v;
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IUserInitiator);
+            }
+
+            public object Value
+            {
+                get { return v; }
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Load_Invoke
+            : IInterfacedPayload, IAsyncInvokable, IPayloadObserverUpdatable
+        {
+            [ProtoMember(1)] public Domain.IUserEventObserver observer;
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IUserInitiator);
+            }
+
+            public Task<IValueGetable> InvokeAsync(object __target)
+            {
+                return null;
+            }
+
+            void IPayloadObserverUpdatable.Update(Action<IInterfacedObserver> updater)
+            {
+                if (observer != null)
+                {
+                    updater(observer);
+                }
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Load_Return
+            : IInterfacedPayload, IValueGetable
+        {
+            [ProtoMember(1)] public Domain.TrackableUserContext v;
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IUserInitiator);
+            }
+
+            public object Value
+            {
+                get { return v; }
+            }
+        }
+    }
+
+    public interface IUserInitiator_NoReply
+    {
+        void Create(Domain.IUserEventObserver observer, string nickname);
+        void Load(Domain.IUserEventObserver observer);
+    }
+
+    public class UserInitiatorRef : InterfacedActorRef, IUserInitiator, IUserInitiator_NoReply
+    {
+        public override Type InterfaceType => typeof(IUserInitiator);
+
+        public UserInitiatorRef() : base(null)
+        {
+        }
+
+        public UserInitiatorRef(IRequestTarget target) : base(target)
+        {
+        }
+
+        public UserInitiatorRef(IRequestTarget target, IRequestWaiter requestWaiter, TimeSpan? timeout = null) : base(target, requestWaiter, timeout)
+        {
+        }
+
+        public IUserInitiator_NoReply WithNoReply()
+        {
+            return this;
+        }
+
+        public UserInitiatorRef WithRequestWaiter(IRequestWaiter requestWaiter)
+        {
+            return new UserInitiatorRef(Target, requestWaiter, Timeout);
+        }
+
+        public UserInitiatorRef WithTimeout(TimeSpan? timeout)
+        {
+            return new UserInitiatorRef(Target, RequestWaiter, timeout);
+        }
+
+        public Task<Domain.TrackableUserContext> Create(Domain.IUserEventObserver observer, string nickname)
+        {
+            var requestMessage = new RequestMessage {
+                InvokePayload = new IUserInitiator_PayloadTable.Create_Invoke { observer = (UserEventObserver)observer, nickname = nickname }
+            };
+            return SendRequestAndReceive<Domain.TrackableUserContext>(requestMessage);
+        }
+
+        public Task<Domain.TrackableUserContext> Load(Domain.IUserEventObserver observer)
+        {
+            var requestMessage = new RequestMessage {
+                InvokePayload = new IUserInitiator_PayloadTable.Load_Invoke { observer = (UserEventObserver)observer }
+            };
+            return SendRequestAndReceive<Domain.TrackableUserContext>(requestMessage);
+        }
+
+        void IUserInitiator_NoReply.Create(Domain.IUserEventObserver observer, string nickname)
+        {
+            var requestMessage = new RequestMessage {
+                InvokePayload = new IUserInitiator_PayloadTable.Create_Invoke { observer = (UserEventObserver)observer, nickname = nickname }
+            };
+            SendRequest(requestMessage);
+        }
+
+        void IUserInitiator_NoReply.Load(Domain.IUserEventObserver observer)
+        {
+            var requestMessage = new RequestMessage {
+                InvokePayload = new IUserInitiator_PayloadTable.Load_Invoke { observer = (UserEventObserver)observer }
+            };
+            SendRequest(requestMessage);
+        }
+    }
+
+    [ProtoContract]
+    public class SurrogateForIUserInitiator
+    {
+        [ProtoMember(1)] public IRequestTarget Target;
+
+        [ProtoConverter]
+        public static SurrogateForIUserInitiator Convert(IUserInitiator value)
+        {
+            if (value == null) return null;
+            return new SurrogateForIUserInitiator { Target = ((UserInitiatorRef)value).Target };
+        }
+
+        [ProtoConverter]
+        public static IUserInitiator Convert(SurrogateForIUserInitiator value)
+        {
+            if (value == null) return null;
+            return new UserInitiatorRef(value.Target);
+        }
+    }
+}
+
+#endregion
+#region Domain.IUserLogin
+
+namespace Domain
+{
+    [PayloadTable(typeof(IUserLogin), PayloadTableKind.Request)]
+    public static class IUserLogin_PayloadTable
+    {
+        public static Type[,] GetPayloadTypes()
+        {
+            return new Type[,] {
+                { typeof(Login_Invoke), typeof(Login_Return) },
+            };
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Login_Invoke
+            : IInterfacedPayload, IAsyncInvokable
+        {
+            [ProtoMember(1)] public string credential;
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IUserLogin);
+            }
+
+            public Task<IValueGetable> InvokeAsync(object __target)
+            {
+                return null;
+            }
+        }
+
+        [ProtoContract, TypeAlias]
         public class Login_Return
             : IInterfacedPayload, IValueGetable, IPayloadActorRefUpdatable
         {
-            [ProtoMember(1)] public Domain.LoginResult v;
+            [ProtoMember(1)] public System.Tuple<long, Domain.IUserInitiator> v;
 
             public Type GetInterfaceType()
             {
@@ -279,7 +464,7 @@ namespace Domain
             {
                 if (v != null)
                 {
-                    if (v.User != null) updater(v.User);
+                    if (v.Item2 != null) updater(v.Item2);
                 }
             }
         }
@@ -287,7 +472,7 @@ namespace Domain
 
     public interface IUserLogin_NoReply
     {
-        void Login(Domain.IUserEventObserver observer);
+        void Login(string credential);
     }
 
     public class UserLoginRef : InterfacedActorRef, IUserLogin, IUserLogin_NoReply
@@ -321,18 +506,18 @@ namespace Domain
             return new UserLoginRef(Target, RequestWaiter, timeout);
         }
 
-        public Task<Domain.LoginResult> Login(Domain.IUserEventObserver observer)
+        public Task<System.Tuple<long, Domain.IUserInitiator>> Login(string credential)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = (UserEventObserver)observer }
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { credential = credential }
             };
-            return SendRequestAndReceive<Domain.LoginResult>(requestMessage);
+            return SendRequestAndReceive<System.Tuple<long, Domain.IUserInitiator>>(requestMessage);
         }
 
-        void IUserLogin_NoReply.Login(Domain.IUserEventObserver observer)
+        void IUserLogin_NoReply.Login(string credential)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { observer = (UserEventObserver)observer }
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { credential = credential }
             };
             SendRequest(requestMessage);
         }

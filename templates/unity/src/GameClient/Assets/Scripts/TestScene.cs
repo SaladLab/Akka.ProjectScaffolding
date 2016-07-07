@@ -20,7 +20,7 @@ public class TestScene : MonoBehaviour
     {
         LogText.text = "ProcessTest(" + channelType + ")\n";
 
-        // Create channel
+        // Create communicator
 
         var communicator = UnityCommunicatorFactory.Create();
         {
@@ -30,11 +30,11 @@ public class TestScene : MonoBehaviour
             channelFactory.CreateChannelLogger = () => LogManager.GetLogger("Channel");
             channelFactory.PacketSerializer = PacketSerializer.CreatePacketSerializer<DomainProtobufSerializer>();
         }
-        communicator.CreateChannel();
 
-        // Connecto to gateway
+        // Connect channel
 
-        var t0 = communicator.Channel.ConnectAsync();
+        var channel = communicator.CreateChannel();
+        var t0 = channel.ConnectAsync();
         yield return t0.WaitHandle;
         if (t0.Exception != null)
         {
@@ -44,7 +44,7 @@ public class TestScene : MonoBehaviour
 
         // Start communicating with actors via channel
 
-        var greeter = communicator.Channel.CreateRef<GreeterRef>();
+        var greeter = channel.CreateRef<GreeterRef>();
 
         WriteLine("Start ProcessTest");
         WriteLine("");
@@ -64,7 +64,7 @@ public class TestScene : MonoBehaviour
         WriteLine("");
         WriteLine("End ProcessTest");
 
-        communicator.Channel.Close();
+        channel.Close();
     }
 
     void WriteLine(string text)
