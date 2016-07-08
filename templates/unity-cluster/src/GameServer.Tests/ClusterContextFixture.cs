@@ -10,6 +10,8 @@ namespace GameServer
     {
         public ClusterNodeContext Context { get; private set; }
 
+        private DistributedActorTableContainerRef<long> _userTableContainer;
+
         public ClusterContextFixture()
         {
             // force interface assembly to be loaded before creating ProtobufSerializer
@@ -33,9 +35,9 @@ namespace GameServer
                     "User", context.ClusterActorDiscovery, null, null)),
                 "UserTable"));
 
-            context.UserTableContainer = new DistributedActorTableContainerRef<long>(system.ActorOf(
+            _userTableContainer = new DistributedActorTableContainerRef<long>(system.ActorOf(
                 Props.Create(() => new DistributedActorTableContainer<long>(
-                    "User", context.ClusterActorDiscovery, null, null, InterfacedPoisonPill.Instance)),
+                    "User", context.ClusterActorDiscovery, typeof(UserActorFactory), new object[] { context }, InterfacedPoisonPill.Instance)),
                 "UserTableContainer"));
 
             Context = context;
@@ -46,7 +48,7 @@ namespace GameServer
             if (Context == null)
                 return;
 
-            Context.System.Terminate();
+            Context.System.Terminate().Wait();
             Context = null;
         }
     }

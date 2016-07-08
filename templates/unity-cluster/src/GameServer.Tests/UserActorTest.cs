@@ -1,7 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Akka.Actor;
-using Akka.Cluster.Utility;
-using Akka.Interfaced;
 using Akka.TestKit.Xunit2;
 using Domain;
 using Xunit;
@@ -9,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace GameServer
 {
-    public class UserActorTest : TestKit, IClassFixture<ClusterContextFixture>
+    public class UserActorTest : TestKit, IClassFixture<ClusterContextFixture>, IClassFixture<RedisStorageFixture>
     {
         private ClusterNodeContext _clusterContext;
         private MockClient _client;
@@ -25,14 +22,42 @@ namespace GameServer
         }
 
         [Fact]
-        public async Task Test_UserDisconnect_ActorStopped()
+        public async Task UserCreate()
         {
-            var ret = await _client.LoginAsync();
-            var userActor = _client.Channel.GetBoundActorRef((UserRef)ret.User);
+            // Act
+            await _client.PrepareUserAsync();
+
+            // Assert
+            Assert.Equal("Created", _userContext.Data.Nickname);
+        }
+
+        [Fact]
+        public async Task UserCreateAndLoad()
+        {
+            // Arrange
+            await _client.PrepareUserAsync();
+            _client.ChannelRef.WithNoReply().Close();
+            var loginCredential = _client.LoginCredential;
+            var registerTime = _client.UserContext.Data.RegisterTime;
+            await Task.Delay(100);
+
+            // Act
+            _client = new MockClient(_clusterContext);
+            await _client.PrepareUserAsync(loginCredential);
+
+            // Assert
+            Assert.Equal(registerTime, _userContext.Data.RegisterTime);
+        }
+
+        [Fact]
+        public async Task ChannelClose_UserActorStopped()
+        {
+            await _client.PrepareUserAsync();
+            var userActor = _client.Channel.GetBoundActorRef(_client.User);
 
             Watch(userActor);
 
-            _client.ChannelRef.CastToIActorRef().Tell(InterfacedPoisonPill.Instance);
+            _client.ChannelRef.WithNoReply().Close();
 
             ExpectTerminated(userActor);
 
@@ -41,9 +66,9 @@ namespace GameServer
         }
 
         [Fact]
-        public async Task Test_SetNickname_Succeed()
+        public async Task SetNickname_Succeed()
         {
-            await _client.LoginAsync();
+            await _client.PrepareUserAsync();
 
             await _user.SetNickname("SuperPower");
 
@@ -51,9 +76,9 @@ namespace GameServer
         }
 
         [Fact]
-        public async Task Test_SetNickname_Fail()
+        public async Task SetNickname_Fail()
         {
-            await _client.LoginAsync();
+            await _client.PrepareUserAsync();
 
             var e = await Record.ExceptionAsync(() => _user.SetNickname(null));
             var r = e as ResultException;
@@ -62,9 +87,9 @@ namespace GameServer
         }
 
         [Fact]
-        public async Task Test_AddNote_Succeed()
+        public async Task AddNote_Succeed()
         {
-            await _client.LoginAsync();
+            await _client.PrepareUserAsync();
 
             await _user.AddNote(1, "One");
             await _user.AddNote(2, "Two");
@@ -75,9 +100,9 @@ namespace GameServer
         }
 
         [Fact]
-        public async Task Test_AddNote_Fail()
+        public async Task AddNote_Fail()
         {
-            await _client.LoginAsync();
+            await _client.PrepareUserAsync();
 
             await _user.AddNote(1, "One");
 
@@ -88,9 +113,9 @@ namespace GameServer
         }
 
         [Fact]
-        public async Task Test_RemoveNote_Succeed()
+        public async Task RemoveNote_Succeed()
         {
-            await _client.LoginAsync();
+            await _client.PrepareUserAsync();
 
             await _user.AddNote(1, "One");
             await _user.AddNote(2, "Two");
@@ -101,9 +126,9 @@ namespace GameServer
         }
 
         [Fact]
-        public async Task Test_RemoveNote_Fail()
+        public async Task RemoveNote_Fail()
         {
-            await _client.LoginAsync();
+            await _client.PrepareUserAsync();
 
             var e = await Record.ExceptionAsync(() => _user.RemoveNote(1));
             var r = e as ResultException;

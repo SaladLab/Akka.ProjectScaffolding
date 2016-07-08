@@ -98,9 +98,8 @@ namespace GameServer
 
         private async Task OnUserInitiated(TrackableUserContext userContext, IUserEventObserver observer)
         {
-            userContext.SetDefaultTracker();
-
-            _userContext = userContext;
+            _userContext = userContext.Clone();
+            _userContext.SetDefaultTracker();
             _userContextSaveTracker = new TrackableUserContextTracker();
             _userEventObserver = (UserEventObserver)observer;
 

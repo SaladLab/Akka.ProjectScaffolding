@@ -26,6 +26,14 @@ namespace Domain
         [IgnoreDataMember]
         public IPocoTracker<IUserData> Tracker { get; set; }
 
+        public TrackableUserData Clone()
+        {
+            var o = new TrackableUserData();
+            o._Nickname = _Nickname;
+            o._RegisterTime = _RegisterTime;
+            return o;
+        }
+
         [IgnoreDataMember]
         public bool Changed { get { return Tracker != null && Tracker.HasChange; } }
 
@@ -53,6 +61,11 @@ namespace Domain
                 var t = (IPocoTracker<IUserData>)value;
                 Tracker = t;
             }
+        }
+
+        ITrackable ITrackable.Clone()
+        {
+            return Clone();
         }
 
         public ITrackable GetChildTrackable(object name)
@@ -181,6 +194,14 @@ namespace Domain
             }
         }
 
+        public TrackableUserContext Clone()
+        {
+            var o = new TrackableUserContext();
+            o._Data = _Data?.Clone();
+            o._Notes = _Notes?.Clone();
+            return o;
+        }
+
         public bool Changed { get { return Tracker != null && Tracker.HasChange; } }
 
         ITracker ITrackable.Tracker
@@ -220,6 +241,11 @@ namespace Domain
                 var t = (TrackableUserContextTracker)value;
                 Tracker = t;
             }
+        }
+
+        ITrackable ITrackable.Clone()
+        {
+            return Clone();
         }
 
         public ITrackable GetChildTrackable(object name)

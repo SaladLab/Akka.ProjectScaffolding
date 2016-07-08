@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace GameServer
 {
-    public class UserLoginActorTest : TestKit, IClassFixture<ClusterContextFixture>
+    public class UserLoginActorTest : TestKit, IClassFixture<ClusterContextFixture>, IClassFixture<RedisStorageFixture>
     {
         private ClusterNodeContext _clusterContext;
         private MockClient _client;
@@ -24,17 +24,23 @@ namespace GameServer
         [Fact]
         public async Task UserLogin_Succeed()
         {
-            var ret = await _client.LoginAsync();
+            // Act
+            await _client.LoginAsync();
 
+            // Assert
             Assert.NotEqual(0, _client.UserId);
-            Assert.NotNull(_client.User);
-            Assert.NotNull(_client.UserContext);
-            Assert.NotNull(_client.UserContext.Data);
-            Assert.NotNull(_client.UserContext.Notes);
+            Assert.Equal(_client.Channel.GetBoundActorRef(_client.UserInitiator),
+                         (await _clusterContext.UserTable.Get(_client.UserId)).Actor);
+        }
 
-            var tableRet = await _clusterContext.UserTable.Get(_client.UserId);
-            Assert.Equal(_client.Channel.GetBoundActorRef((UserRef)ret.User),
-                         tableRet.Actor);
+        [Fact]
+        public async Task UserLogin_WrongCredential_Fail()
+        {
+            // Act
+            var exception = await Record.ExceptionAsync(() => _client.LoginAsync("WRONG"));
+
+            // Assert
+            Assert.Equal(ResultCodeType.LoginCredentialError, ((ResultException)exception).ResultCode);
         }
     }
 }

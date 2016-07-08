@@ -7,6 +7,7 @@ using Akka.Interfaced.SlimServer;
 using Akka.Interfaced.TestKit;
 using Akka.TestKit;
 using Domain;
+using System.Threading;
 
 namespace GameServer
 {
@@ -17,6 +18,8 @@ namespace GameServer
 
         public TestActorBoundChannel Channel { get; private set; }
         public ActorBoundChannelRef ChannelRef { get; private set; }
+        public string LoginCredential { get; private set; }
+        public UserInitiatorRef UserInitiator { get; private set; }
         public UserLoginRef UserLogin { get; private set; }
         public long UserId { get; private set; }
         public UserRef User { get; private set; }
@@ -45,18 +48,48 @@ namespace GameServer
                     (ActorBindingFlags)0)
             };
 
-        public async Task<LoginResult> LoginAsync()
+        private static long s_lastAutoLoginId = DateTime.UtcNow.Ticks;
+
+        public async Task LoginAsync(string credential = null)
+        {
+            if (LoginCredential != null)
+                throw new InvalidOperationException("Already logined");
+
+            if (credential == null)
+            {
+                Interlocked.Increment(ref s_lastAutoLoginId);
+                credential = "C" + s_lastAutoLoginId;
+            }
+
+            var loginRet = await UserLogin.Login(credential);
+            LoginCredential = credential;
+            UserId = loginRet.Item1;
+            UserInitiator = (UserInitiatorRef)loginRet.Item2;
+        }
+
+        public async Task PrepareUserAsync(string credential = null)
         {
             if (User != null)
-                throw new InvalidOperationException("Already logined");
+                throw new InvalidOperationException("Already user prepared!");
+
+            if (UserInitiator == null)
+                await LoginAsync(credential);
 
             _userEventObserver = (UserEventObserver)Channel.CreateObserver<IUserEventObserver>(this);
 
-            var ret = await UserLogin.Login(_userEventObserver);
-            UserId = ret.UserId;
-            User = (UserRef)ret.User;
-            UserContext = new TrackableUserContext();
-            return ret;
+            try
+            {
+                UserContext = await UserInitiator.Load(_userEventObserver);
+            }
+            catch (ResultException e)
+            {
+                if (e.ResultCode == ResultCodeType.UserNeedToBeCreated)
+                    UserContext = await UserInitiator.Create(_userEventObserver, "Created");
+                else
+                    throw;
+            }
+
+            User = UserInitiator.Cast<UserRef>();
         }
 
         void IUserEventObserver.UserContextChange(TrackableUserContextTracker userContextTracker)
