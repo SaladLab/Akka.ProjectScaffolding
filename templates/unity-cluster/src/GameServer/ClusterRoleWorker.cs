@@ -39,7 +39,6 @@ namespace GameServer
             await _userTable.GracefulStop(
                 TimeSpan.FromMinutes(1),
                 new DistributedActorTableMessage<long>.GracefulStop(InterfacedPoisonPill.Instance));
-            _userTable = null;
         }
     }
 
@@ -58,7 +57,10 @@ namespace GameServer
             _context = context;
             _channelType = (ChannelType)Enum.Parse(typeof(ChannelType), config.GetString("type", "Tcp"));
             _listenEndPoint = new IPEndPoint(IPAddress.Any, config.GetInt("port", 0));
-            _connectEndPoint = new IPEndPoint(IPAddress.Loopback, _listenEndPoint.Port);
+
+            var connectAddress = config.GetString("connect-address");
+            var connectPort = config.GetInt("connect-port", _listenEndPoint.Port);
+            _connectEndPoint = new IPEndPoint(connectAddress != null ? IPAddress.Parse(connectAddress) : IPAddress.Loopback, connectPort);
         }
 
         public override async Task Start()
@@ -66,7 +68,8 @@ namespace GameServer
             // create UserTableContainer
 
             _userContainer = _context.System.ActorOf(
-                Props.Create(() => new DistributedActorTableContainer<long>("User", _context.ClusterActorDiscovery, typeof(UserActorFactory), new object[] { _context }, InterfacedPoisonPill.Instance)),
+                Props.Create(() => new DistributedActorTableContainer<long>(
+                    "User", _context.ClusterActorDiscovery, typeof(UserActorFactory), new object[] { _context }, InterfacedPoisonPill.Instance)),
                 "UserTableContainer");
 
             // create gateway for users to connect to
@@ -81,7 +84,6 @@ namespace GameServer
                     ListenEndPoint = _listenEndPoint,
                     ConnectEndPoint = _connectEndPoint,
                     TokenRequired = true,
-                    TokenTimeout = TimeSpan.FromSeconds(5),
                     GatewayLogger = LogManager.GetLogger(name),
                     CreateChannelLogger = (ep, _) => LogManager.GetLogger($"Channel({ep}"),
                     ConnectionSettings = new TcpConnectionSettings { PacketSerializer = serializer },
@@ -101,8 +103,9 @@ namespace GameServer
 
             if (_gateway != null)
             {
-                await _gateway.Stop();
-                await _gateway.CastToIActorRef().GracefulStop(TimeSpan.FromSeconds(10), new Identify(0));
+                await _gateway.CastToIActorRef().GracefulStop(
+                    TimeSpan.FromSeconds(10),
+                    InterfacedMessageBuilder.Request<IGateway>(x => x.Stop()));
             }
 
             // stop user container
@@ -173,8 +176,9 @@ namespace GameServer
         {
             // stop gateway
 
-            await _gateway.Stop();
-            await _gateway.CastToIActorRef().GracefulStop(TimeSpan.FromSeconds(10), new Identify(0));
+            await _gateway.CastToIActorRef().GracefulStop(
+                TimeSpan.FromSeconds(10),
+                InterfacedMessageBuilder.Request<IGateway>(x => x.Stop()));
         }
     }
 }

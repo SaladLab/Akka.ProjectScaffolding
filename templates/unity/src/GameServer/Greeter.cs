@@ -18,7 +18,7 @@ namespace GameServer
 
         public Greeter(ActorBoundChannelRef channel, IPEndPoint clientRemoteEndPoint)
         {
-            _logger = LogManager.GetLogger($"UserLoginActor({clientRemoteEndPoint})");
+            _logger = LogManager.GetLogger($"Greeter({clientRemoteEndPoint})");
             _helloGenerator = new HelloGenerator(who => $"Hello {who}!");
         }
 

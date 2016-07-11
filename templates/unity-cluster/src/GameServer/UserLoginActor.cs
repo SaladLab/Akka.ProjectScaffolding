@@ -18,9 +18,7 @@ namespace GameServer
         private readonly ClusterNodeContext _clusterContext;
         private readonly ActorBoundChannelRef _channel;
 
-        public UserLoginActor(ClusterNodeContext clusterContext,
-                              ActorBoundChannelRef channel,
-                              EndPoint clientRemoteEndPoint)
+        public UserLoginActor(ClusterNodeContext clusterContext, ActorBoundChannelRef channel, EndPoint clientRemoteEndPoint)
         {
             _logger = LogManager.GetLogger($"UserLoginActor({clientRemoteEndPoint})");
             _clusterContext = clusterContext;
@@ -45,10 +43,10 @@ namespace GameServer
                 throw new ResultException(ResultCodeType.LoginAlreadyLoginedError);
 
             // bound actor to this channel or new channel on user gateway
-            BoundActorTarget boundActor;
+            IRequestTarget boundTarget;
             try
             {
-                boundActor = await _channel.BindActorOrOpenChannel(
+                boundTarget = await _channel.BindActorOrOpenChannel(
                     user.Actor, new TaggedType[] { typeof(IUserInitiator) },
                     ActorBindingFlags.OpenThenNotification | ActorBindingFlags.CloseThenStop | ActorBindingFlags.StopThenCloseChannel,
                     "UserGateway", null);
@@ -63,7 +61,7 @@ namespace GameServer
             // once login done, stop this
             Self.Tell(InterfacedPoisonPill.Instance);
 
-            return Tuple.Create(userId, (IUserInitiator)boundActor.Cast<UserInitiatorRef>());
+            return Tuple.Create(userId, (IUserInitiator)boundTarget.Cast<UserInitiatorRef>());
         }
 
         private static long GetUserIdFromCredential(string credential)

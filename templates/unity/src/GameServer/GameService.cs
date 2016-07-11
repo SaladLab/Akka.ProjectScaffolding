@@ -35,8 +35,9 @@ namespace GameServer
         bool ServiceControl.Stop(HostControl hostControl)
         {
             // stop gateway
-            _gateway.Stop();
-            _gateway.CastToIActorRef().GracefulStop(TimeSpan.FromSeconds(10), new Identify(0)).Wait();
+            _gateway.CastToIActorRef().GracefulStop(
+                TimeSpan.FromSeconds(10),
+                InterfacedMessageBuilder.Request<IGateway>(x => x.Stop())).Wait();
 
             // terminate actor system
             _system.Terminate().Wait();
@@ -68,9 +69,7 @@ namespace GameServer
             var gateway = (type == ChannelType.Tcp)
                 ? system.ActorOf(Props.Create(() => new TcpGateway(initiator)), name).Cast<GatewayRef>()
                 : system.ActorOf(Props.Create(() => new UdpGateway(initiator)), name).Cast<GatewayRef>();
-
             await gateway.Start();
-
             return gateway;
         }
     }

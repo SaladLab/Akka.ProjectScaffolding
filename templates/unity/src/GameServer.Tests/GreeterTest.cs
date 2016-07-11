@@ -1,15 +1,23 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using System.Net;
-using Akka.Actor;
 using Akka.Interfaced;
 using Akka.TestKit.Xunit2;
 using Domain;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace GameServer.Tests
 {
     public class GreeterTest : TestKit
     {
+        private readonly IDisposable _logCapture;
+
+        public GreeterTest(ITestOutputHelper outputHelper)
+        {
+            // _logCapture = LoggingHelper.Capture(outputHelper);
+        }
+
         private GreeterRef CreateGreeterActor()
         {
             return Sys.InterfacedActorOf(() => new Greeter(null, new IPEndPoint(IPAddress.Any, 0))).Cast<GreeterRef>();
