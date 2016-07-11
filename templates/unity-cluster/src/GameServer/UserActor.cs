@@ -34,21 +34,6 @@ namespace GameServer
             return SaveUserContextChangeToDb();
         }
 
-        void IActorBoundChannelObserver.ChannelOpen(IActorBoundChannel channel, object tag)
-        {
-            _channel = (ActorBoundChannelRef)channel;
-        }
-
-        void IActorBoundChannelObserver.ChannelOpenTimeout(object tag)
-        {
-            Self.Tell(InterfacedPoisonPill.Instance);
-        }
-
-        void IActorBoundChannelObserver.ChannelClose(IActorBoundChannel channel, object tag)
-        {
-            _channel = null;
-        }
-
         private void FlushUserContext()
         {
             if (_userEventObserver != null)
@@ -63,6 +48,21 @@ namespace GameServer
             return (_userContextSaveTracker != null && _userContextSaveTracker.HasChange)
                 ? RedisStorage.UserContextMapper.SaveAsync(RedisStorage.Db, _userContextSaveTracker, _userContext, "User_" + _id)
                 : Task.CompletedTask;
+        }
+
+        void IActorBoundChannelObserver.ChannelOpen(IActorBoundChannel channel, object tag)
+        {
+            _channel = (ActorBoundChannelRef)channel;
+        }
+
+        void IActorBoundChannelObserver.ChannelOpenTimeout(object tag)
+        {
+            Self.Tell(InterfacedPoisonPill.Instance);
+        }
+
+        void IActorBoundChannelObserver.ChannelClose(IActorBoundChannel channel, object tag)
+        {
+            _channel = null;
         }
 
         async Task<TrackableUserContext> IUserInitiator.Create(IUserEventObserver observer, string nickname)

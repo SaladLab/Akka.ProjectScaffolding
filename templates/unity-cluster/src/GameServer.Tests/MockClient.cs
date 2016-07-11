@@ -19,9 +19,9 @@ namespace GameServer
         public TestActorBoundChannel Channel { get; private set; }
         public ActorBoundChannelRef ChannelRef { get; private set; }
         public string LoginCredential { get; private set; }
-        public UserInitiatorRef UserInitiator { get; private set; }
         public UserLoginRef UserLogin { get; private set; }
         public long UserId { get; private set; }
+        public UserInitiatorRef UserInitiator { get; private set; }
         public UserRef User { get; private set; }
         public TrackableUserContext UserContext { get; private set; }
 
