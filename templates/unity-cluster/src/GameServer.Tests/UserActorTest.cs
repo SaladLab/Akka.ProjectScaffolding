@@ -60,6 +60,7 @@ namespace GameServer
             _client.ChannelRef.WithNoReply().Close();
 
             ExpectTerminated(userActor);
+            await Task.Delay(100);
 
             var tableRet = await _clusterContext.UserTable.Get(_client.UserId);
             Assert.Null(tableRet.Actor);
